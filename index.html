@@ -438,11 +438,12 @@
     </div>
 
     <script>
-        // === ОНОВЛЕНЕ ПОСИЛАННЯ ===
+        // === ВАШЕ ПОСИЛАННЯ ===
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzdJenw-gfPVtBXIyHtp67w25L9lV6FHZTKtXWxpc8flXqt-qvg7pvIVaC3BMpWLCC9/exec'; 
         
         const DRAFT_KEY = 'foodline_shift_draft';
         const OFFLINE_QUEUE_KEY = 'foodline_offline_queue';
+        const SHIFT_STATES_KEY = 'foodline_shift_states'; // Для перевірки послідовності
 
         // Стейт співробітника
         let formState = {
@@ -458,48 +459,20 @@
         let pendingVisitorPayload = null;
 
         const employeesList = [
-            "Бойко Світлана Петрівна",
-            "Бондаренко Валерій Валентинович",
-            "Вискірко Руслана Михайлівна",
-            "Воробей Людмила Леонідівна",
-            "Ворона Інна Василівна",
-            "Ворожко Дарья Вячеславівна",
-            "Галагін Євгеній Ярославович",
-            "Гончарук Ольга Михайлівна",
-            "Гора Андрій Олександрович",
-            "Долинюк Олександр Миколайович",
-            "Єрко Віктор Андрійович",
-            "Загура Іван Борисович",
-            "Іванчук Олександр Анатолійович",
-            "Кішка Сергій Володимирович",
-            "Козурак Іван Миколайович",
-            "Козило Василь Вячеславович",
-            "Кораблін Дмитро",
-            "Корнієнко Жанна Василівна",
-            "Король Юрій Валерійович",
-            "Кучера Галина Іванівна",
-            "Лавриненко Максим Миколайович",
-            "Максімюк Анатолій Анатолійович",
-            "Максімюк Анатолій Вікторович",
-            "Марків Олександр Йосипович",
-            "Мозговий Олександр Сергійович",
-            "Непорадна Олена Михайлівна",
-            "Огаркова Марія Володимирівна",
-            "Попадюк Анжела Миколаївна",
-            "Садиріна Ольга Анатоліївна",
-            "Свінцов Михайло Генадійович",
-            "Снітко Ярослав Іванович",
-            "Соботович Лілія Михайлівна",
-            "Соботович Тетяна Михайлівна",
-            "Солдатова Ірина Володимирівна",
-            "Сосновський Валерій Петрович",
-            "Фалько Анатолій Олександрович",
-            "Фисина Наталія Григорівна",
-            "Хакімов Олександр Михайлович",
-            "Хлупянець Віталій Анатолійович",
-            "Христянович Віталій Едуардович",
-            "Черніцький Назарій Вячеславович",
-            "Шанчук Павло Сергійович",
+            "Бойко Світлана Петрівна", "Бондаренко Валерій Валентинович", "Вискірко Руслана Михайлівна",
+            "Воробей Людмила Леонідівна", "Ворона Інна Василівна", "Ворожко Дарья Вячеславівна",
+            "Галагін Євгеній Ярославович", "Гончарук Ольга Михайлівна", "Гора Андрій Олександрович",
+            "Долинюк Олександр Миколайович", "Єрко Віктор Андрійович", "Загура Іван Борисович",
+            "Іванчук Олександр Анатолійович", "Кішка Сергій Володимирович", "Козурак Іван Миколайович",
+            "Козило Василь Вячеславович", "Кораблін Дмитро", "Корнієнко Жанна Василівна",
+            "Король Юрій Валерійович", "Кучера Галина Іванівна", "Лавриненко Максим Миколайович",
+            "Максімюк Анатолій Анатолійович", "Максімюк Анатолій Вікторович", "Марків Олександр Йосипович",
+            "Мозговий Олександр Сергійович", "Непорадна Олена Михайлівна", "Огаркова Марія Володимирівна",
+            "Попадюк Анжела Миколаївна", "Садиріна Ольга Анатоліївна", "Свінцов Михайло Генадійович",
+            "Снітко Ярослав Іванович", "Соботович Лілія Михайлівна", "Соботович Тетяна Михайлівна",
+            "Солдатова Ірина Володимирівна", "Сосновський Валерій Петрович", "Фалько Анатолій Олександрович",
+            "Фисина Наталія Григорівна", "Хакімов Олександр Михайлович", "Хлупянець Віталій Анатолійович",
+            "Христянович Віталій Едуардович", "Черніцький Назарій Вячеславович", "Шанчук Павло Сергійович",
             "Шута Олександра Сергіівна"
         ];
 
@@ -578,24 +551,20 @@
         }
 
         function setupEventListeners() {
-            // Навігація між формами
             document.getElementById('navEmployee').addEventListener('click', () => switchTab('employee'));
             document.getElementById('navVisitor').addEventListener('click', () => switchTab('visitor'));
 
-            // Тема
             document.getElementById('themeToggle').addEventListener('click', () => {
                 document.body.classList.toggle('dark');
                 localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
             });
 
-            // Форма співробітника - ПІБ
             document.getElementById('employeeSelect').addEventListener('change', (e) => {
                 formState.employee = e.target.value;
                 clearError('field-employee');
                 saveDraft();
             });
 
-            // Форма співробітника - START/STOP
             document.querySelectorAll('.action-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('selected'));
@@ -606,7 +575,6 @@
                 });
             });
 
-            // Форма співробітника - Симптоми
             document.querySelectorAll('.symptom-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     document.querySelectorAll('.symptom-btn').forEach(b => b.classList.remove('active-yes', 'active-no'));
@@ -619,7 +587,6 @@
                 });
             });
 
-            // Відвідувач - Мета "Інше"
             document.getElementById('v_purpose').addEventListener('change', (e) => {
                 const otherInput = document.getElementById('v_purposeOther');
                 if(e.target.value === 'Інше') {
@@ -630,12 +597,10 @@
                 }
             });
 
-            // Відвідувач - Медичні Так/Ні
             document.getElementById('medicalQuestions').addEventListener('click', (e) => {
                 if(e.target.classList.contains('yn-btn')) {
                     const qid = e.target.dataset.qid;
                     const val = e.target.dataset.val;
-                    
                     const siblings = e.target.parentElement.querySelectorAll('.yn-btn');
                     siblings.forEach(b => b.classList.remove('active-yes', 'active-no'));
                     
@@ -647,7 +612,6 @@
                 }
             });
 
-            // Відвідувач - Чекбокс інструментів
             document.getElementById('v_toolsCheck').addEventListener('change', (e) => {
                 const inputs = document.getElementById('v_toolsInputs');
                 if(e.target.checked) inputs.classList.remove('hidden');
@@ -658,11 +622,9 @@
                 }
             });
 
-            // Сабміти
             document.getElementById('submitBtn').addEventListener('click', handleMainSubmit);
             document.getElementById('submitVisitorBtn').addEventListener('click', handleVisitorSubmit);
 
-            // Кнопки модального вікна візитера
             document.getElementById('cancelVisitorBtn').addEventListener('click', () => {
                 document.getElementById('visitorConfirmModal').classList.add('hidden');
                 document.getElementById('visitorConfirmModal').classList.remove('flex');
@@ -676,7 +638,6 @@
                 }
             });
 
-            // Фідбек співробітника
             document.querySelectorAll('.feedback-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     formState.feedback = btn.dataset.val;
@@ -686,6 +647,7 @@
 
             document.getElementById('closeModalBtn').addEventListener('click', () => {
                 document.getElementById('statusModal').classList.add('hidden');
+                document.getElementById('statusModal').classList.remove('flex');
             });
 
             document.getElementById('networkStatusBtn').addEventListener('click', processOfflineQueue);
@@ -793,7 +755,7 @@
         }
 
         // ==========================================
-        // ЛОГІКА ВІДПРАВКИ СПІВРОБІТНИКА
+        // ЛОГІКА ВІДПРАВКИ СПІВРОБІТНИКА (З ПЕРЕВІРКОЮ)
         // ==========================================
         function validateMainForm() {
             let isValid = true;
@@ -807,6 +769,19 @@
         function handleMainSubmit() {
             if (!validateMainForm()) return;
 
+            // ПЕРЕВІРКА ПОСЛІДОВНОСТІ
+            const states = JSON.parse(localStorage.getItem(SHIFT_STATES_KEY) || '{}');
+            const currentState = states[formState.employee] || 'Кінець роботи';
+
+            if (formState.action === 'Початок роботи' && currentState === 'Початок роботи') {
+                showSystemModal('Помилка', `Ви вже почали зміну! Спочатку закінчіть попередню.`);
+                return;
+            }
+            if (formState.action === 'Кінець роботи' && currentState === 'Кінець роботи') {
+                showSystemModal('Помилка', `Ви ще не починали зміну! Спочатку зареєструйте початок.`);
+                return;
+            }
+
             if (formState.action === 'Кінець роботи') {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 document.getElementById('main-form').classList.add('hidden');
@@ -816,16 +791,10 @@
             }
         }
 
-        // ==========================================
-        // ЛОГІКА ВІДПРАВКИ ВІДВІДУВАЧА
-        // ==========================================
-        function validateVisitorForm() {
+        function handleVisitorSubmit() {
             let isValid = true;
-            
             const reqInfo = ['v_fullName', 'v_company', 'v_position', 'v_purpose', 'v_accompany'];
-            reqInfo.forEach(id => {
-                if(!document.getElementById(id).value.trim()) isValid = false;
-            });
+            reqInfo.forEach(id => { if(!document.getElementById(id).value.trim()) isValid = false; });
             if(document.getElementById('v_purpose').value === 'Інше' && !document.getElementById('v_purposeOther').value.trim()) isValid = false;
             if(!isValid) showError('vf-info'); else clearError('vf-info');
 
@@ -839,15 +808,10 @@
             if(!document.getElementById('v_signHost').value.trim()) confValid = false;
             if(!confValid) { showError('vf-confirm'); isValid = false; } else clearError('vf-confirm');
 
-            return isValid;
-        }
-
-        function handleVisitorSubmit() {
-            if (!validateVisitorForm()) return;
+            if (!isValid) return;
 
             let medAnswers = [];
             medQuestions.forEach((q, i) => { medAnswers.push(`${i+1}. ${visitorState[q.id]}`); });
-            
             let purpose = document.getElementById('v_purpose').value;
             if(purpose === 'Інше') purpose = `Інше: ${document.getElementById('v_purposeOther').value}`;
 
@@ -864,7 +828,6 @@
             };
 
             pendingVisitorPayload = payloadData;
-
             const hasMedRisk = medAnswers.some(a => a.includes('Так'));
             const medHtml = hasMedRisk ? '<span class="text-red-500 font-bold">Є симптоми ⚠️</span>' : '<span class="text-emerald-600 font-bold">Все в нормі ✅</span>';
             
@@ -878,15 +841,11 @@
                 <p><b class="text-slate-900 dark:text-white">Інструменти:</b> ${payloadData.v_toolsLog}</p>
             `;
             document.getElementById('vc-details').innerHTML = detailsHtml;
-
             const modal = document.getElementById('visitorConfirmModal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
         }
 
-        // ==========================================
-        // ЗАГАЛЬНА ВІДПРАВКА НА СЕРВЕР
-        // ==========================================
         function getNameAndPatronymic(fullName) {
             if (!fullName) return '';
             const parts = fullName.split(' ');
@@ -895,25 +854,22 @@
             return fullName;
         }
 
-        async function sendDataToGAS(data, type) {
+        function sendDataToGAS(data, type) {
             const isEmployeeStart = (type === 'employee' && data.action === 'Початок роботи');
             const name = type === 'employee' ? getNameAndPatronymic(data.employee) : data.v_fullName;
-
-            if (type === 'employee' && isEmployeeStart) {
-                document.getElementById('submitBtn').disabled = true;
-                document.getElementById('submitBtn').innerHTML = 'Відправка...';
-            } else if (type === 'employee' && !isEmployeeStart) {
-                document.querySelectorAll('.feedback-btn').forEach(b => { b.disabled = true; b.classList.add('opacity-50'); });
-            } else if (type === 'visitor') {
-                document.getElementById('submitVisitorBtn').disabled = true;
-                document.getElementById('submitVisitorBtn').innerHTML = 'Відправка...';
-            }
 
             const payload = {
                 formType: type,
                 timestamp: new Date().toISOString(),
                 ...data
             };
+
+            // Зберігаємо стан (Початок чи Кінець)
+            if (type === 'employee') {
+                const states = JSON.parse(localStorage.getItem(SHIFT_STATES_KEY) || '{}');
+                states[data.employee] = data.action;
+                localStorage.setItem(SHIFT_STATES_KEY, JSON.stringify(states));
+            }
 
             if (!navigator.onLine) {
                 saveToOfflineQueue(payload);
@@ -922,22 +878,18 @@
                 return;
             }
 
-            try {
-                await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                
-                triggerSuccessToast(type, isEmployeeStart, name, false);
-            } catch (error) {
-                console.error("Помилка", error);
+            triggerSuccessToast(type, isEmployeeStart, name, false);
+            resetUI(type, isEmployeeStart);
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).catch(error => {
+                console.error("Помилка фонової відправки", error);
                 saveToOfflineQueue(payload);
-                showSystemModal('Збережено локально', 'Немає зв\'язку. Дані будуть відправлені автоматично при появі Інтернету.');
-            } finally {
-                resetUI(type, isEmployeeStart);
-            }
+            });
         }
 
         function triggerSuccessToast(type, isEmployeeStart, name, isOffline) {
@@ -1001,7 +953,6 @@
             document.getElementById('modalMessage').textContent = message;
             modal.classList.remove('hidden');
             modal.classList.add('flex');
-            clearForm();
         }
 
         function saveToOfflineQueue(payload) {
