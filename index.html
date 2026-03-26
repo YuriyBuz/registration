@@ -218,7 +218,7 @@
                 <label for="employeeSelect" class="block text-lg font-bold mb-3">Ваше прізвище та ім'я <span class="text-red-500">*</span></label>
                 <select id="employeeSelect" class="block w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-transparent text-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow">
                     <option value="">Оберіть зі списку</option>
-                    </select>
+                </select>
                 <p class="error-msg hidden text-red-500 text-sm mt-2 font-semibold">Будь ласка, оберіть своє прізвище</p>
             </div>
 
@@ -304,7 +304,7 @@
                         <label class="block text-sm font-semibold mb-1">Співробітник, що супроводжує <span class="text-red-500">*</span></label>
                         <select id="v_accompany" class="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-transparent focus:ring-2 focus:ring-emerald-500 outline-none">
                             <option value="">Оберіть зі списку</option>
-                            </select>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -314,7 +314,7 @@
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Будь ласка, дайте чесну відповідь на наступні запитання. Позначте «Так» або «Ні». Чи спостерігались у Вас протягом останніх 48 годин або є зараз наступні симптоми/стани: <span class="text-red-500">*</span></p>
                 
                 <div class="space-y-4" id="medicalQuestions">
-                    </div>
+                </div>
 
                 <div id="v_medWarning" class="hidden mt-4 p-4 bg-red-100 dark:bg-red-900/30 border-l-4 border-red-500 text-red-800 dark:text-red-300 rounded-r-lg text-sm font-medium">
                     ⚠️ Увага: Оскільки Ви надали відповідь «Так» на одне або кілька запитань, доступ у виробничі зони може бути обмежений або заборонений.
@@ -351,7 +351,7 @@
                         <label class="block text-sm font-semibold mb-1 text-gray-500">Дозвіл на вхід (Підпис супроводжуючої особи) <span class="text-red-500">*</span></label>
                         <select id="v_signHost" class="w-full p-2 border-b-2 border-gray-300 dark:border-gray-600 bg-transparent focus:border-emerald-500 outline-none font-medium italic">
                             <option value="">Оберіть особу, що дозволила вхід</option>
-                            </select>
+                        </select>
                     </div>
                 </div>
 
@@ -424,7 +424,7 @@
             <h3 class="text-2xl font-bold mb-4 text-slate-800 dark:text-white text-center border-b pb-2 dark:border-slate-600">Перевірте дані візиту</h3>
             
             <div class="space-y-3 text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-6 text-left" id="vc-details">
-                </div>
+            </div>
 
             <div class="flex gap-3">
                 <button id="cancelVisitorBtn" class="flex-1 py-3 bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-white rounded-xl font-bold hover:bg-gray-300 dark:hover:bg-slate-600 transition-colors">
@@ -438,14 +438,13 @@
     </div>
 
     <script>
-        // === ВАШЕ ПОСИЛАННЯ ===
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzdJenw-gfPVtBXIyHtp67w25L9lV6FHZTKtXWxpc8flXqt-qvg7pvIVaC3BMpWLCC9/exec'; 
+        // === ВАШЕ НОВЕ ПОСИЛАННЯ ВЖЕ ТУТ ===
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxHnd4lZ2RS-KCdmrXyIBKyLHFcMV7ib9gUzG-eHMj8Q1IRnlrccMOsZ8FYsyfO3AVR/exec'; 
         
         const DRAFT_KEY = 'foodline_shift_draft';
         const OFFLINE_QUEUE_KEY = 'foodline_offline_queue';
-        const SHIFT_STATES_KEY = 'foodline_shift_states'; // Для перевірки послідовності
+        const SHIFT_STATES_KEY = 'foodline_shift_states'; 
 
-        // Стейт співробітника
         let formState = {
             employee: '',
             action: '',
@@ -454,7 +453,6 @@
             feedback: ''
         };
 
-        // Стейт відвідувача
         let visitorState = {};
         let pendingVisitorPayload = null;
 
@@ -474,6 +472,22 @@
             "Фисина Наталія Григорівна", "Хакімов Олександр Михайлович", "Хлупянець Віталій Анатолійович",
             "Христянович Віталій Едуардович", "Черніцький Назарій Вячеславович", "Шанчук Павло Сергійович",
             "Шута Олександра Сергіівна"
+        ];
+
+        const hostsList = [
+            "Галагін Євгеній Ярославович",
+            "Шута Олександра Сергіівна",
+            "Соботович Лілія Михайлівна",
+            "Огаркова Марія Володимирівна",
+            "Гончарук Ольга Михайлівна",
+            "Бузницький Юрій",
+            "Диндар Анастасія"
+        ];
+
+        const signersList = [
+            "Галагін Євгеній Ярославович",
+            "Бузницький Юрій",
+            "Диндар Анастасія"
         ];
 
         const medQuestions = [
@@ -509,15 +523,28 @@
         }
 
         function populateSelects() {
-            const selects = [document.getElementById('employeeSelect'), document.getElementById('v_accompany'), document.getElementById('v_signHost')];
+            const empSelect = document.getElementById('employeeSelect');
             employeesList.forEach(emp => {
-                selects.forEach(select => {
-                    if(!select) return;
-                    const option = document.createElement('option');
-                    option.value = emp;
-                    option.textContent = emp;
-                    select.appendChild(option);
-                });
+                const option = document.createElement('option');
+                option.value = emp;
+                option.textContent = emp;
+                empSelect.appendChild(option);
+            });
+
+            const hostSelect = document.getElementById('v_accompany');
+            hostsList.forEach(host => {
+                const option = document.createElement('option');
+                option.value = host;
+                option.textContent = host;
+                hostSelect.appendChild(option);
+            });
+
+            const signSelect = document.getElementById('v_signHost');
+            signersList.forEach(signer => {
+                const option = document.createElement('option');
+                option.value = signer;
+                option.textContent = signer;
+                signSelect.appendChild(option);
             });
         }
 
@@ -754,9 +781,6 @@
             }
         }
 
-        // ==========================================
-        // ЛОГІКА ВІДПРАВКИ СПІВРОБІТНИКА (З ПЕРЕВІРКОЮ)
-        // ==========================================
         function validateMainForm() {
             let isValid = true;
             if (!formState.employee) { showError('field-employee'); isValid = false; }
@@ -769,7 +793,6 @@
         function handleMainSubmit() {
             if (!validateMainForm()) return;
 
-            // ПЕРЕВІРКА ПОСЛІДОВНОСТІ
             const states = JSON.parse(localStorage.getItem(SHIFT_STATES_KEY) || '{}');
             const currentState = states[formState.employee] || 'Кінець роботи';
 
@@ -878,6 +901,7 @@
                 return;
             }
 
+            // Оптимістичне миттєве оновлення UI
             triggerSuccessToast(type, isEmployeeStart, name, false);
             resetUI(type, isEmployeeStart);
 
