@@ -170,7 +170,7 @@
 
     <div class="container mx-auto max-w-2xl p-4 sm:p-6 relative">
         
-        <!-- КОМПАКТНИЙ HEADER -->
+        <!-- КОМПАКТНИЙ HEADER В ОДНУ ЛІНІЮ -->
         <header class="flex justify-between items-center mb-6 pb-2 border-b border-gray-200">
             <div id="current-date" class="text-[11px] sm:text-xs font-semibold text-gray-500 w-1/3 text-left leading-tight"></div>
             
@@ -256,6 +256,7 @@
             </div>
         </div>
 
+        <!-- ВІДНОВЛЕНИЙ БЛОК ВІДВІДУВАЧІВ З ОРИГІНАЛЬНИМИ ТЕКСТАМИ -->
         <div id="visitor-form" class="hidden space-y-5">
             <h1 class="text-2xl font-bold mb-4 text-center">Реєстрація візитерів виробництва</h1>
             
@@ -424,7 +425,7 @@
 
     <script>
         // === ВАШЕ ПОСИЛАННЯ (Залишається незмінним) ===
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyup5HQaSSCe0zav9UtSzGvvB094zlRlgRflDyD-QF07_zCyyUclgzWV89nksy5ue4/exec'; 
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzoV3lQ5iWiKlJ2V4ZEP28k9Qv31rlHP2b7wpGjYt_I-FScuilIANn6Y3nJdbqIh8dN/exec'; 
         
         const OFFLINE_QUEUE_KEY = 'foodline_offline_queue';
         const SHIFT_STATES_KEY = 'foodline_shift_states'; 
@@ -454,14 +455,14 @@
             "Огаркова Марія Володимирівна", "Попадюк Анжела Миколаївна", "Садиріна Ольга Анатоліївна", 
             "Свінцов Михайло Генадійович", "Снітко Ярослав Іванович", "Соботович Лілія Михайлівна", 
             "Соботович Тетяна Михайлівна", "Солдатова Ірина Володимирівна", "Сосновський Валерій Петрович", 
-            "Фалько Анатолій Олександрович", "Фисина Наталія Григорівна", "Хлупянець Віталій Анатолійович",
-            "Христянович Віталій Едуардович", "Черніцький Назарій Вячеславович", "Шанчук Павло Сергійович",
+            "Фалько Анатолій Олександрович", "Фисина Наталія Григорівна", "Хакімов Олександр Михайлович",
+            "Хлупянець Віталій Анатолійович", "Черніцький Назарій Вячеславович", "Шанчук Павло Сергійович",
             "Шута Олександра Сергіівна"
         ];
 
         const hostsList = [
             "Галагін Євгеній Ярославович",
-            "Шута Олександра Сергіівна",
+            "Шута Олександра Сергіївна",
             "Соботович Лілія Михайлівна",
             "Огаркова Марія Володимирівна",
             "Гончарук Ольга Михайлівна",
@@ -475,6 +476,7 @@
             "Диндар Анастасія"
         ];
 
+        // ПОВНІ ОРИГІНАЛЬНІ ЗАПИТАННЯ
         const medQuestions = [
             { id: 'q1', text: 'Підвищена температура тіла, лихоманка?' },
             { id: 'q2', text: 'Розлади шлунково-кишкового тракту (нудота, діарея, блювота)?' },
@@ -689,10 +691,10 @@
             }
         }
 
-        // Повне скидання форми до початкового стану
+        // Повне скидання форми до початкового стану (ЗАТИРАННЯ ДАНИХ)
         function clearForm() {
             formState = { employee: '', action: '', feeling: null, symptoms: '', feedback: '' }; 
-            document.getElementById('employeeSelect').value = ''; // Скидаємо працівника
+            document.getElementById('employeeSelect').value = ''; 
             
             document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('selected'));
             document.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('active'));
@@ -927,7 +929,7 @@
                 
                 setTimeout(() => {
                     toast.classList.add('hidden');
-                    clearForm(); // ТУТ ВІДБУВАЄТЬСЯ ПОВНЕ ОЧИЩЕННЯ
+                    clearForm(); // ПОВНЕ ОЧИЩЕННЯ ФОРМИ (включно з ПІБ)
                 }, 300);
             }, duration);
         }
