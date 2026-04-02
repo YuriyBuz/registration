@@ -64,10 +64,15 @@
 
     <div class="container mx-auto max-w-2xl p-4 sm:p-6 relative">
         <header class="flex justify-between items-center mb-6 pb-2 border-b border-gray-200">
-            <div id="current-date" class="text-[11px] sm:text-xs font-semibold text-gray-500 w-1/3 text-left leading-tight"></div>
+            <div class="w-1/3 flex items-center gap-2">
+                <button id="openDashBtn" class="text-xl p-1 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-emerald-50 transition-colors" title="Відкрити Дашборд">📊</button>
+                <div id="current-date" class="text-[11px] sm:text-xs font-semibold text-gray-500 leading-tight"></div>
+            </div>
+            
             <div class="w-1/3 flex justify-center">
                 <img src="https://foodline-production.com/wp-content/uploads/2021/10/3752781497_3752781497.webp" alt="Logo" class="h-8 sm:h-10 w-auto object-contain rounded-md bg-white p-0.5 shadow-sm">
             </div>
+
             <div class="w-1/3 flex justify-end">
                 <div class="text-[10px] sm:text-xs font-semibold px-2 py-1 rounded-full border bg-white flex items-center gap-1.5 shadow-sm cursor-pointer" id="networkStatusBtn">
                     <span class="w-2 h-2 rounded-full bg-green-500" id="statusDot"></span>
@@ -84,13 +89,11 @@
         <div id="main-form" class="space-y-5">
             <h1 class="text-2xl font-bold mb-4 text-center">Реєстрація початку / закінчення зміни</h1>
             
-            <div class="card p-5 rounded-2xl shadow-sm" id="field-employee">
-                <label class="block text-lg font-bold mb-3">Ваше прізвище та ім'я</label>
-                <!-- РОЗУМНИЙ ПОШУК ЗАМІСТЬ SELECT -->
-                <div class="relative" id="empSearchContainer">
-                    <input type="text" id="empSearchInput" placeholder="Почніть вводити прізвище..." class="w-full p-3 border border-gray-300 rounded-xl bg-transparent text-lg focus:ring-2 focus:ring-emerald-500 outline-none" autocomplete="off">
-                    <div id="empDropdown" class="hidden absolute z-10 w-full bg-white border border-gray-200 rounded-xl mt-1 shadow-xl max-h-60 overflow-y-auto"></div>
-                </div>
+            <div class="card p-5 rounded-2xl shadow-sm transition-all" id="field-employee">
+                <label for="employeeSelect" class="block text-lg font-bold mb-3">Ваше прізвище та ім'я</label>
+                <select id="employeeSelect" class="block w-full p-3 border border-gray-300 rounded-xl bg-transparent text-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow">
+                    <option value="">Оберіть зі списку</option>
+                </select>
                 <p class="error-msg hidden text-red-500 text-sm mt-2 font-semibold">Будь ласка, оберіть своє прізвище зі списку</p>
             </div>
 
@@ -180,6 +183,51 @@
     </div>
 
     <!-- Modals and Toasts -->
+    
+    <!-- Пароль для Дашборду Modal -->
+    <div id="dashAuthModal" class="fixed inset-0 hidden items-center justify-center modal-overlay z-[70] p-4">
+        <div class="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-sm text-center">
+            <h3 class="text-2xl font-bold mb-4 text-slate-800">Вхід у Дашборд</h3>
+            <input type="password" id="dashPinInput" placeholder="Введіть пароль" class="w-full p-4 border border-gray-300 rounded-xl mb-4 text-center text-xl tracking-widest outline-none focus:ring-2 focus:ring-emerald-500">
+            <p id="dashAuthError" class="text-red-500 text-sm font-semibold mb-4 hidden">Невірний пароль</p>
+            <div class="flex gap-3">
+                <button id="cancelDashAuth" class="flex-1 py-3 bg-gray-200 rounded-xl font-bold hover:bg-gray-300">Скасувати</button>
+                <button id="confirmDashAuth" class="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700">Увійти</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Вікно Дашборду -->
+    <div id="dashDataModal" class="fixed inset-0 hidden items-center justify-center modal-overlay z-[80] p-2 sm:p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col relative overflow-hidden">
+            <div class="p-4 border-b flex justify-between items-center bg-emerald-50">
+                <h3 class="text-lg font-bold text-emerald-800">📊 Дашборд (СЬОГОДНІ)</h3>
+                <button id="closeDashDataBtn" class="text-gray-500 hover:text-red-500 font-bold p-2 text-xl">&times;</button>
+            </div>
+            <div class="p-0 overflow-auto flex-1 bg-slate-50 relative">
+                <div id="dashLoading" class="absolute inset-0 bg-white flex flex-col items-center justify-center z-10 hidden">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-emerald-600 mb-4"></div>
+                    <p class="text-gray-500 font-medium">Завантаження даних...</p>
+                </div>
+                <table class="min-w-full text-left border-collapse text-[11px] sm:text-sm bg-white">
+                    <thead class="bg-slate-200 sticky top-0 shadow-sm">
+                        <tr>
+                            <th class="p-2 border-b font-bold text-slate-700">ПІБ</th>
+                            <th class="p-2 border-b font-bold text-slate-700 hidden sm:table-cell">Посада</th>
+                            <th class="p-2 border-b font-bold text-slate-700">Статус</th>
+                            <th class="p-2 border-b font-bold text-slate-700">Поч</th>
+                            <th class="p-2 border-b font-bold text-slate-700">Кін</th>
+                            <th class="p-2 border-b font-bold text-slate-700">Год</th>
+                            <th class="p-2 border-b font-bold text-slate-700 hidden sm:table-cell">Тип виходу</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashTableBody" class="divide-y divide-gray-200">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <div id="customToast" class="fixed inset-0 hidden items-center justify-center modal-overlay z-[100] p-4 opacity-0 pointer-events-none">
         <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center toast-content scale-90 opacity-0" id="customToastContent">
             <div class="text-6xl mb-4" id="toastIcon"></div><h3 class="text-2xl font-bold leading-tight" id="toastMessage"></h3>
@@ -195,7 +243,8 @@
     </div>
 
     <script>
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz4P64ILpTos3dEPUPNsFi7U9exUNNPnAaUSsQUSXF6lUEzIdFSX5pmVaS1QlkeVE8B/exec'; 
+        // НОВИЙ ЛІНК НА БЕКЕНД
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw7TiullqgZqAdCR5-gghD59mDmCfC4LomtwsGaG44NMoQ1K0zt72I8pyf7Nf0jcHCp/exec'; 
         const OFFLINE_QUEUE_KEY = 'foodline_offline_queue';
         const SHIFT_STATES_KEY = 'foodline_shift_states'; 
 
@@ -204,7 +253,7 @@
             "Воробей Людмила Леонідівна", "Ворона Інна Василівна", "Ворожко Дарья Вячеславівна",
             "Галагін Євгеній Ярославович", "Гончарук Ольга Михайлівна", "Гора Андрій Олександрович",
             "Долинюк Олександр Миколайович", "Єрко Віктор Андрійович", "Загура Іван Борисович",
-            "Іванчук Олександр Анатолійович", "Кірієнко Жанна Василівна", "Кішка Сергій Володимирович",
+            "Іванчук Олександр Анатолійович", "Корнієнко Жанна Василівна", "Кішка Сергій Володимирович",
             "Козурак Іван Миколайович", "Козило Василь Вячеславович", "Кораблін Дмитро", 
             "Король Юрій Валерійович", "Кучера Галина Іванівна", "Лавриненко Максим Миколайович",
             "Максімюк Анатолій Анатолійович", "Максімюк Анатолій Вікторович", "Марків Олександр Йосипович",
@@ -236,7 +285,6 @@
 
         function initApp() {
             populateSelects();
-            initSearchableDropdown();
             generateRatingButtons();
             generateMedQuestions();
             setupEventListeners();
@@ -247,43 +295,16 @@
             window.addEventListener('offline', updateNetworkStatus);
         }
 
-        // --- ЛОГІКА ПОШУКУ ПО СПИСКУ ПРАЦІВНИКІВ ---
-        function initSearchableDropdown() {
-            const searchInput = document.getElementById('empSearchInput');
-            const dropdown = document.getElementById('empDropdown');
-
-            function renderList(filter = '') {
-                dropdown.innerHTML = '';
-                const filtered = employeesList.filter(emp => emp.toLowerCase().includes(filter.toLowerCase()));
-                if(filtered.length === 0) {
-                    dropdown.innerHTML = '<div class="p-3 text-gray-500">Нічого не знайдено</div>';
-                    return;
-                }
-                filtered.forEach(emp => {
-                    const item = document.createElement('div');
-                    item.className = 'p-3 hover:bg-emerald-50 cursor-pointer border-b border-gray-100 text-lg transition-colors';
-                    item.textContent = emp;
-                    item.onclick = () => {
-                        searchInput.value = emp;
-                        formState.employee = emp;
-                        dropdown.classList.add('hidden');
-                        clearError('field-employee');
-                    };
-                    dropdown.appendChild(item);
-                });
-            }
-
-            searchInput.addEventListener('focus', () => { dropdown.classList.remove('hidden'); renderList(searchInput.value); });
-            searchInput.addEventListener('input', (e) => { dropdown.classList.remove('hidden'); renderList(e.target.value); });
-            
-            document.addEventListener('click', (e) => {
-                if (!document.getElementById('empSearchContainer').contains(e.target)) {
-                    dropdown.classList.add('hidden');
-                }
-            });
-        }
-
         function populateSelects() {
+            const empSelect = document.getElementById('employeeSelect');
+            empSelect.innerHTML = '<option value="">Оберіть зі списку</option>';
+            employeesList.forEach(emp => {
+                const option = document.createElement('option');
+                option.value = emp;
+                option.textContent = emp;
+                empSelect.appendChild(option);
+            });
+
             const hostSelect = document.getElementById('v_accompany');
             hostsList.forEach(h => hostSelect.add(new Option(h, h)));
             const signSelect = document.getElementById('v_signHost');
@@ -321,6 +342,7 @@
         function setupEventListeners() {
             document.getElementById('navEmployee').onclick = () => switchTab('employee');
             document.getElementById('navVisitor').onclick = () => switchTab('visitor');
+            document.getElementById('employeeSelect').onchange = (e) => { formState.employee = e.target.value; clearError('field-employee'); };
             document.querySelectorAll('.action-btn').forEach(btn => btn.onclick = () => {
                 document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected'); formState.action = btn.dataset.val; clearError('field-action');
@@ -346,6 +368,31 @@
             document.getElementById('confirmVisitorBtn').onclick = () => { document.getElementById('visitorConfirmModal').classList.add('hidden'); if(pendingVisitorPayload) sendDataToGAS(pendingVisitorPayload, 'visitor'); };
             document.querySelectorAll('.feedback-btn').forEach(btn => btn.onclick = () => { formState.feedback = btn.dataset.val; sendDataToGAS(formState, 'employee'); });
             document.getElementById('closeModalBtn').onclick = () => { document.getElementById('statusModal').classList.add('hidden'); };
+            
+            // Події для Дашборду
+            document.getElementById('openDashBtn').onclick = () => {
+                document.getElementById('dashPinInput').value = '';
+                document.getElementById('dashAuthError').classList.add('hidden');
+                document.getElementById('dashAuthModal').classList.remove('hidden');
+                document.getElementById('dashAuthModal').classList.add('flex');
+            };
+            document.getElementById('cancelDashAuth').onclick = () => {
+                document.getElementById('dashAuthModal').classList.add('hidden');
+                document.getElementById('dashAuthModal').classList.remove('flex');
+            };
+            document.getElementById('confirmDashAuth').onclick = () => {
+                if(document.getElementById('dashPinInput').value === '0987') {
+                    document.getElementById('dashAuthModal').classList.add('hidden');
+                    document.getElementById('dashAuthModal').classList.remove('flex');
+                    openDashboard();
+                } else {
+                    document.getElementById('dashAuthError').classList.remove('hidden');
+                }
+            };
+            document.getElementById('closeDashDataBtn').onclick = () => {
+                document.getElementById('dashDataModal').classList.add('hidden');
+                document.getElementById('dashDataModal').classList.remove('flex');
+            };
         }
 
         function switchTab(tab) {
@@ -358,7 +405,7 @@
 
         function clearForm() {
             formState = { employee: '', action: '', feeling: null, symptoms: '', feedback: '' };
-            document.getElementById('empSearchInput').value = ''; // Очистка пошуку
+            document.getElementById('employeeSelect').value = ''; 
             document.querySelectorAll('.action-btn, .rating-btn, .symptom-btn').forEach(b => b.classList.remove('selected', 'active', 'active-yes', 'active-no'));
             document.querySelectorAll('.error-ring').forEach(el => el.classList.remove('error-ring'));
             document.querySelectorAll('.error-msg').forEach(el => el.classList.add('hidden'));
@@ -425,16 +472,45 @@
             document.getElementById('visitorConfirmModal').classList.remove('hidden'); document.getElementById('visitorConfirmModal').classList.add('flex');
         }
 
+        function getNameAndPatronymic(fullName) {
+            if (!fullName) return '';
+            const parts = fullName.split(' ');
+            if (parts.length >= 3) return `${parts[1]} ${parts[2]}`; 
+            if (parts.length === 2) return parts[1];
+            return fullName;
+        }
+
         function sendDataToGAS(data, type) {
+            const isEmployeeStart = (type === 'employee' && data.action === 'Початок роботи');
+            const name = type === 'employee' ? getNameAndPatronymic(data.employee) : data.v_fullName;
             const payload = { formType: type, timestamp: new Date().toISOString(), ...data };
+            
             if(type === 'employee') {
                 const states = JSON.parse(localStorage.getItem(SHIFT_STATES_KEY) || '{}');
                 states[data.employee] = data.action; localStorage.setItem(SHIFT_STATES_KEY, JSON.stringify(states));
             }
-            if(!navigator.onLine) { saveToOfflineQueue(payload); showToast(data.action === 'Початок роботи' ? "Доброго ранку! (Офлайн)" : "Дякуємо! (Офлайн)", "📶", 3000); return; }
             
-            showToast(data.action === 'Початок роботи' ? "Доброго ранку!" : "Дякуємо!", "☀️", 3000);
+            if(!navigator.onLine) { 
+                saveToOfflineQueue(payload); 
+                triggerSuccessToast(type, isEmployeeStart, name, true); 
+                return; 
+            }
+            
+            triggerSuccessToast(type, isEmployeeStart, name, false);
             fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).catch(e => saveToOfflineQueue(payload));
+        }
+
+        function triggerSuccessToast(type, isEmployeeStart, name, isOffline) {
+            const offlineText = isOffline ? " (Збережено офлайн)" : "";
+            if (type === 'employee') {
+                if (isEmployeeStart) {
+                    showToast(`Доброго ранку!\n${name},\nбажаємо вам хорошого робочого дня!${offlineText}`, "☀️", 3000);
+                } else {
+                    showToast(`${name},\nДякуємо за вашу роботу сьогодні.\nГарного відпочинку та до зустрічі!${offlineText}`, "🌙", 3500);
+                }
+            } else {
+                showToast(`Візитера успішно зареєстровано!${offlineText}`, "✅", 2500);
+            }
         }
 
         function showToast(m, i, d) {
@@ -459,6 +535,53 @@
             document.getElementById('statusText').textContent = online ? (q.length>0 ? `Черга: ${q.length}` : 'Онлайн') : 'Офлайн';
         }
         function updateClock() { document.getElementById('current-date').textContent = new Date().toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }); }
+
+        // Логіка Дашборду
+        function openDashboard() {
+            const modal = document.getElementById('dashDataModal');
+            const loader = document.getElementById('dashLoading');
+            const tbody = document.getElementById('dashTableBody');
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            loader.classList.remove('hidden');
+            tbody.innerHTML = '';
+
+            if (!navigator.onLine) {
+                loader.classList.add('hidden');
+                tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-red-500 font-bold">Для перегляду Дашборду потрібен інтернет</td></tr>';
+                return;
+            }
+
+            fetch(GOOGLE_SCRIPT_URL + '?action=get_dashboard')
+                .then(res => res.json())
+                .then(data => {
+                    loader.classList.add('hidden');
+                    if(!data || data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">Немає записів за сьогодні.</td></tr>';
+                        return;
+                    }
+                    data.forEach(row => {
+                        let statusColor = row.status.includes('процесі') ? 'text-green-600' : (row.status.includes('з\'явився') || row.status.includes('Легально') ? 'text-red-500' : 'text-slate-600');
+                        let tr = `
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="p-2 border-b font-medium whitespace-nowrap">${row.name}</td>
+                                <td class="p-2 border-b text-gray-500 hidden sm:table-cell">${row.position}</td>
+                                <td class="p-2 border-b font-bold ${statusColor}">${row.status}</td>
+                                <td class="p-2 border-b font-mono text-center">${row.start}</td>
+                                <td class="p-2 border-b font-mono text-center">${row.end}</td>
+                                <td class="p-2 border-b font-bold text-center">${row.hours}</td>
+                                <td class="p-2 border-b text-gray-500 hidden sm:table-cell">${row.type}</td>
+                            </tr>
+                        `;
+                        tbody.insertAdjacentHTML('beforeend', tr);
+                    });
+                })
+                .catch(err => {
+                    loader.classList.add('hidden');
+                    tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-red-500">Помилка завантаження. Оновіть файл Code.gs у вашому Google Apps Script.</td></tr>';
+                });
+        }
     </script>
 </body>
 </html>
