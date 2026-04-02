@@ -2,182 +2,72 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Реєстрація початку / закінчення зміни</title>
+    <!-- Додаємо PWA Manifest через Data URI для Google Apps Script -->
+    <link rel="manifest" id="manifest-link">
+    <meta name="theme-color" content="#10b981">
+    <link rel="apple-touch-icon" href="https://foodline-production.com/wp-content/uploads/2021/10/3752781497_3752781497.webp">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* CSS Змінні в стилі Чек-листа (світла тема за замовчуванням) */
         :root {
-            --bg-color: #f8fafc; /* slate-50 */
+            --bg-color: #f8fafc;
             --card-bg-color: #ffffff;
-            --text-color: #1e293b; /* slate-800 */
-            --text-muted-color: #64748b; /* slate-500 */
-            --item-bg-color: #f1f5f9; /* slate-100 */
+            --text-color: #1e293b;
+            --text-muted-color: #64748b;
+            --item-bg-color: #f1f5f9;
             --border-color: #e2e8f0;
-            --active-btn-bg: #10b981; /* emerald-500 */
-            --error-btn-bg: #ef4444; /* red-500 */
+            --active-btn-bg: #10b981;
+            --error-btn-bg: #ef4444;
         }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            -webkit-tap-highlight-color: transparent;
-            padding-bottom: 3rem;
-        }
-
-        .card {
-            background-color: var(--card-bg-color);
-            border: 1px solid var(--border-color);
-        }
-
-        /* Стилі для оцінки (1-10) */
-        .rating-btn {
-            background-color: var(--item-bg-color);
-            border: 1px solid var(--border-color);
-            color: var(--text-muted-color);
-            transition: all 0.2s ease;
-        }
-        .rating-btn:hover { filter: brightness(0.95); }
-        .rating-btn.active {
-            background-color: #3b82f6;
-            color: white;
-            border-color: #3b82f6;
-            transform: scale(1.05);
-            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4);
-        }
-
-        /* Стилі для Симптомів (Співробітники) */
-        .symptom-btn {
-            background-color: var(--item-bg-color);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            transition: all 0.2s ease;
-        }
-        .symptom-btn.active-no {
-            background-color: var(--active-btn-bg);
-            color: white;
-            border-color: var(--active-btn-bg);
-        }
-        .symptom-btn.active-yes {
-            background-color: var(--error-btn-bg);
-            color: white;
-            border-color: var(--error-btn-bg);
-        }
-
-        /* Стилі для Так/Ні (Відвідувачі) */
-        .yn-btn {
-            background-color: var(--item-bg-color);
-            border: 1px solid var(--border-color);
-            color: var(--text-muted-color);
-            transition: all 0.2s ease;
-            flex: 1;
-        }
-        .yn-btn.active-yes {
-            background-color: var(--error-btn-bg);
-            color: white;
-            border-color: var(--error-btn-bg);
-        }
-        .yn-btn.active-no {
-            background-color: var(--active-btn-bg);
-            color: white;
-            border-color: var(--active-btn-bg);
-        }
-
-        /* Стилі для START / STOP */
-        .action-btn {
-            transition: all 0.2s ease;
-            filter: grayscale(80%);
-            opacity: 0.6;
-            border: 2px solid transparent;
-        }
-        .action-btn.selected {
-            filter: grayscale(0%);
-            opacity: 1;
-            transform: scale(1.02);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
+        body { background-color: var(--bg-color); color: var(--text-color); -webkit-tap-highlight-color: transparent; padding-bottom: 3rem; }
+        .card { background-color: var(--card-bg-color); border: 1px solid var(--border-color); }
+        .rating-btn { background-color: var(--item-bg-color); border: 1px solid var(--border-color); color: var(--text-muted-color); transition: all 0.2s ease; }
+        .rating-btn.active { background-color: #3b82f6; color: white; border-color: #3b82f6; transform: scale(1.05); box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4); }
+        .symptom-btn { background-color: var(--item-bg-color); border: 1px solid var(--border-color); color: var(--text-color); transition: all 0.2s ease; }
+        .symptom-btn.active-no { background-color: var(--active-btn-bg); color: white; border-color: var(--active-btn-bg); }
+        .symptom-btn.active-yes { background-color: var(--error-btn-bg); color: white; border-color: var(--error-btn-bg); }
+        .yn-btn { background-color: var(--item-bg-color); border: 1px solid var(--border-color); color: var(--text-muted-color); transition: all 0.2s ease; flex: 1; }
+        .yn-btn.active-yes { background-color: var(--error-btn-bg); color: white; border-color: var(--error-btn-bg); }
+        .yn-btn.active-no { background-color: var(--active-btn-bg); color: white; border-color: var(--active-btn-bg); }
+        .action-btn { transition: all 0.2s ease; filter: grayscale(80%); opacity: 0.6; border: 2px solid transparent; }
+        .action-btn.selected { filter: grayscale(0%); opacity: 1; transform: scale(1.02); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         .action-start.selected { border-color: #10b981; }
         .action-stop.selected { border-color: #ef4444; }
-
-        /* Навігаційні вкладки */
-        .nav-tab {
-            transition: all 0.3s ease;
-            border-bottom: 3px solid transparent;
-            color: var(--text-muted-color);
-        }
-        .nav-tab.active {
-            border-bottom-color: #10b981;
-            color: #10b981;
-            font-weight: bold;
-        }
-
-        /* Помилка валідації */
-        .error-ring {
-            animation: errorPulse 1.5s infinite;
-            border: 2px solid #ef4444 !important;
-            background-color: rgba(239, 68, 68, 0.05) !important;
-        }
-
-        @keyframes errorPulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); border-color: #ef4444; }
-            50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); border-color: #fca5a5; }
-        }
-
-        /* Модальні вікна та Тости */
-        .modal-overlay {
-            background-color: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(3px);
-            transition: opacity 0.3s ease;
-        }
-        
-        .toast-content {
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
-        }
-        
-        /* Чекбокс */
-        .custom-checkbox {
-            appearance: none;
-            background-color: var(--card-bg-color);
-            margin: 0;
-            font: inherit;
-            color: currentColor;
-            width: 1.5em;
-            height: 1.5em;
-            border: 2px solid var(--border-color);
-            border-radius: 0.3em;
-            display: grid;
-            place-content: center;
-        }
-        .custom-checkbox::before {
-            content: "";
-            width: 0.85em;
-            height: 0.85em;
-            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
-            transform: scale(0);
-            background-color: white;
-            transition: 120ms transform ease-in-out;
-        }
-        .custom-checkbox:checked {
-            background-color: #10b981;
-            border-color: #10b981;
-        }
-        .custom-checkbox:checked::before {
-            transform: scale(1);
-        }
+        .nav-tab { transition: all 0.3s ease; border-bottom: 3px solid transparent; color: var(--text-muted-color); }
+        .nav-tab.active { border-bottom-color: #10b981; color: #10b981; font-weight: bold; }
+        .error-ring { animation: errorPulse 1.5s infinite; border: 2px solid #ef4444 !important; background-color: rgba(239, 68, 68, 0.05) !important; }
+        @keyframes errorPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); border-color: #ef4444; } 50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); border-color: #fca5a5; } }
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(3px); transition: opacity 0.3s ease; }
+        .toast-content { transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease; }
+        .custom-checkbox { appearance: none; background-color: var(--card-bg-color); margin: 0; font: inherit; color: currentColor; width: 1.5em; height: 1.5em; border: 2px solid var(--border-color); border-radius: 0.3em; display: grid; place-content: center; }
+        .custom-checkbox::before { content: ""; width: 0.85em; height: 0.85em; clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%); transform: scale(0); background-color: white; transition: 120ms transform ease-in-out; }
+        .custom-checkbox:checked { background-color: #10b981; border-color: #10b981; }
+        .custom-checkbox:checked::before { transform: scale(1); }
     </style>
 </head>
 <body class="font-sans antialiased">
+    <script>
+        // Ініціалізація PWA Маніфесту
+        const manifest = {
+            "name": "Реєстрація зміни Foodline",
+            "short_name": "Зміна",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#f8fafc",
+            "theme_color": "#10b981",
+            "icons": [{"src": "https://foodline-production.com/wp-content/uploads/2021/10/3752781497_3752781497.webp", "sizes": "192x192", "type": "image/webp"}]
+        };
+        document.getElementById('manifest-link').href = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
+    </script>
 
     <div class="container mx-auto max-w-2xl p-4 sm:p-6 relative">
-        
-        <!-- КОМПАКТНИЙ HEADER В ОДНУ ЛІНІЮ -->
         <header class="flex justify-between items-center mb-6 pb-2 border-b border-gray-200">
             <div id="current-date" class="text-[11px] sm:text-xs font-semibold text-gray-500 w-1/3 text-left leading-tight"></div>
-            
             <div class="w-1/3 flex justify-center">
                 <img src="https://foodline-production.com/wp-content/uploads/2021/10/3752781497_3752781497.webp" alt="Logo" class="h-8 sm:h-10 w-auto object-contain rounded-md bg-white p-0.5 shadow-sm">
             </div>
-
             <div class="w-1/3 flex justify-end">
                 <div class="text-[10px] sm:text-xs font-semibold px-2 py-1 rounded-full border bg-white flex items-center gap-1.5 shadow-sm cursor-pointer" id="networkStatusBtn">
                     <span class="w-2 h-2 rounded-full bg-green-500" id="statusDot"></span>
@@ -187,26 +77,24 @@
         </header>
 
         <div class="flex mb-6 border-b border-gray-300">
-            <button id="navEmployee" class="nav-tab active flex-1 pb-3 text-center text-lg sm:text-xl focus:outline-none">
-                👷 Співробітник
-            </button>
-            <button id="navVisitor" class="nav-tab flex-1 pb-3 text-center text-lg sm:text-xl focus:outline-none">
-                👤 Відвідувач
-            </button>
+            <button id="navEmployee" class="nav-tab active flex-1 pb-3 text-center text-lg focus:outline-none">👷 Співробітник</button>
+            <button id="navVisitor" class="nav-tab flex-1 pb-3 text-center text-lg focus:outline-none">👤 Відвідувач</button>
         </div>
 
         <div id="main-form" class="space-y-5">
             <h1 class="text-2xl font-bold mb-4 text-center">Реєстрація початку / закінчення зміни</h1>
-
-            <div class="card p-5 rounded-2xl shadow-sm transition-all" id="field-employee">
-                <label for="employeeSelect" class="block text-lg font-bold mb-3">Ваше прізвище та ім'я</label>
-                <select id="employeeSelect" class="block w-full p-3 border border-gray-300 rounded-xl bg-transparent text-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow">
-                    <option value="">Оберіть зі списку</option>
-                </select>
-                <p class="error-msg hidden text-red-500 text-sm mt-2 font-semibold">Будь ласка, оберіть своє прізвище</p>
+            
+            <div class="card p-5 rounded-2xl shadow-sm" id="field-employee">
+                <label class="block text-lg font-bold mb-3">Ваше прізвище та ім'я</label>
+                <!-- РОЗУМНИЙ ПОШУК ЗАМІСТЬ SELECT -->
+                <div class="relative" id="empSearchContainer">
+                    <input type="text" id="empSearchInput" placeholder="Почніть вводити прізвище..." class="w-full p-3 border border-gray-300 rounded-xl bg-transparent text-lg focus:ring-2 focus:ring-emerald-500 outline-none" autocomplete="off">
+                    <div id="empDropdown" class="hidden absolute z-10 w-full bg-white border border-gray-200 rounded-xl mt-1 shadow-xl max-h-60 overflow-y-auto"></div>
+                </div>
+                <p class="error-msg hidden text-red-500 text-sm mt-2 font-semibold">Будь ласка, оберіть своє прізвище зі списку</p>
             </div>
 
-            <div class="card p-5 rounded-2xl shadow-sm transition-all" id="field-feeling">
+            <div class="card p-5 rounded-2xl shadow-sm" id="field-feeling">
                 <label class="block text-lg font-bold mb-4">Як ви себе сьогодні почуваєте?</label>
                 <div class="grid grid-cols-5 sm:grid-cols-10 gap-2" id="ratingContainer"></div>
                 <div class="flex justify-between text-xs text-gray-500 mt-2 font-medium px-1">
@@ -216,238 +104,107 @@
                 <p class="error-msg hidden text-red-500 text-sm mt-3 font-semibold">Будь ласка, оцініть самопочуття</p>
             </div>
 
-            <div class="card p-5 rounded-2xl shadow-sm transition-all" id="field-symptoms">
+            <div class="card p-5 rounded-2xl shadow-sm" id="field-symptoms">
                 <label class="block text-lg font-bold mb-4">Чи є у вас ознаки інфекційних захворювань, захворювань шкіри або шлунково-кишкових захворювань?</label>
-                <!-- ГОРИЗОНТАЛЬНЕ РОЗТАШУВАННЯ СИМПТОМІВ -->
                 <div class="grid grid-cols-2 gap-3">
-                    <button class="symptom-btn rounded-xl p-3 text-center font-medium text-[13px] sm:text-base focus:outline-none leading-tight" data-val="Так, є ознаки захворювань">
-                        Так, є ознаки захворювань
-                    </button>
-                    <button class="symptom-btn rounded-xl p-3 text-center font-medium text-[13px] sm:text-base focus:outline-none leading-tight" data-val="Ні, без ознак захворювання">
-                        Ні, без ознак захворювання
-                    </button>
+                    <button class="symptom-btn rounded-xl p-3 text-center font-medium text-[13px] sm:text-base leading-tight" data-val="Так, є ознаки захворювань">Так, є ознаки захворювань</button>
+                    <button class="symptom-btn rounded-xl p-3 text-center font-medium text-[13px] sm:text-base leading-tight" data-val="Ні, без ознак захворювання">Ні, без ознак захворювання</button>
                 </div>
                 <p class="error-msg hidden text-red-500 text-sm mt-3 font-semibold">Будь ласка, вкажіть наявність симптомів</p>
             </div>
 
-            <div class="card p-5 rounded-2xl shadow-sm transition-all" id="field-action">
+            <div class="card p-5 rounded-2xl shadow-sm" id="field-action">
                 <label class="block text-lg font-bold mb-4">Відмітка про початок або кінець роботи</label>
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="action-btn action-start bg-green-50 rounded-2xl p-4 cursor-pointer flex flex-col items-center justify-center" data-val="Початок роботи">
-                        <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center shadow-md mb-2">
-                            <span class="text-white font-black text-sm tracking-widest">START</span>
-                        </div>
-                        <span class="font-bold text-green-700 text-center">Початок роботи</span>
+                    <div class="action-btn action-start bg-green-50 rounded-2xl p-4 cursor-pointer flex flex-col items-center" data-val="Початок роботи">
+                        <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center shadow-md mb-2"><span class="text-white font-black text-sm">START</span></div>
+                        <span class="font-bold text-green-700">Початок роботи</span>
                     </div>
-                    <div class="action-btn action-stop bg-red-50 rounded-2xl p-4 cursor-pointer flex flex-col items-center justify-center" data-val="Кінець роботи">
-                        <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center shadow-md mb-2">
-                            <span class="text-white font-black text-sm tracking-widest">STOP</span>
-                        </div>
-                        <span class="font-bold text-red-700 text-center">Кінець роботи</span>
+                    <div class="action-btn action-stop bg-red-50 rounded-2xl p-4 cursor-pointer flex flex-col items-center" data-val="Кінець роботи">
+                        <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center shadow-md mb-2"><span class="text-white font-black text-sm">STOP</span></div>
+                        <span class="font-bold text-red-700">Кінець роботи</span>
                     </div>
                 </div>
                 <p class="error-msg hidden text-red-500 text-sm mt-3 font-semibold">Будь ласка, оберіть дію (Початок чи Кінець)</p>
             </div>
-
-            <div class="pt-2">
-                <button id="submitBtn" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xl font-bold rounded-2xl shadow-lg transition-transform transform active:scale-95 flex items-center justify-center">
-                    Відправити
-                </button>
-            </div>
+            <button id="submitBtn" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xl font-bold rounded-2xl shadow-lg active:scale-95 transition-transform">Відправити</button>
         </div>
 
-        <!-- ВІДНОВЛЕНИЙ БЛОК ВІДВІДУВАЧІВ З ОРИГІНАЛЬНИМИ ТЕКСТАМИ -->
         <div id="visitor-form" class="hidden space-y-5">
-            <h1 class="text-2xl font-bold mb-4 text-center">Реєстрація візитерів виробництва</h1>
-            
-            <div class="card p-5 rounded-2xl shadow-sm" id="vf-info">
+             <h1 class="text-2xl font-bold mb-4 text-center">Реєстрація візитерів виробництва</h1>
+             <div class="card p-5 rounded-2xl shadow-sm" id="vf-info">
                 <h2 class="text-lg font-bold mb-4 text-emerald-600 border-b pb-2">БЛОК 1. ІНФОРМАЦІЯ ПРО ВІДВІДУВАЧА 👤</h2>
                 <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-semibold mb-1">ПІБ відвідувача</label>
-                        <input type="text" id="v_fullName" class="w-full p-3 rounded-xl border border-gray-300 bg-transparent focus:ring-2 focus:ring-emerald-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold mb-1">Компанія / Організація</label>
-                        <input type="text" id="v_company" class="w-full p-3 rounded-xl border border-gray-300 bg-transparent focus:ring-2 focus:ring-emerald-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold mb-1">Посада</label>
-                        <input type="text" id="v_position" class="w-full p-3 rounded-xl border border-gray-300 bg-transparent focus:ring-2 focus:ring-emerald-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold mb-1">Мета візиту</label>
-                        <select id="v_purpose" class="w-full p-3 rounded-xl border border-gray-300 bg-transparent focus:ring-2 focus:ring-emerald-500 outline-none mb-2">
-                            <option value="">Оберіть мету</option>
-                            <option value="Аудит/Перевірка">Аудит/Перевірка</option>
-                            <option value="Монтаж/Ремонт">Монтаж/Ремонт</option>
-                            <option value="Переговори">Переговори</option>
-                            <option value="Інше">Інше</option>
-                        </select>
-                        <input type="text" id="v_purposeOther" placeholder="Вкажіть іншу мету" class="hidden w-full p-3 rounded-xl border border-gray-300 bg-transparent focus:ring-2 focus:ring-emerald-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold mb-1">Співробітник, що супроводжує</label>
-                        <select id="v_accompany" class="w-full p-3 rounded-xl border border-gray-300 bg-transparent focus:ring-2 focus:ring-emerald-500 outline-none">
-                            <option value="">Оберіть зі списку</option>
-                        </select>
-                    </div>
+                    <input type="text" id="v_fullName" placeholder="ПІБ відвідувача" class="w-full p-3 rounded-xl border outline-none focus:ring-2 focus:ring-emerald-500">
+                    <input type="text" id="v_company" placeholder="Компанія / Організація" class="w-full p-3 rounded-xl border outline-none focus:ring-2 focus:ring-emerald-500">
+                    <input type="text" id="v_position" placeholder="Посада" class="w-full p-3 rounded-xl border outline-none focus:ring-2 focus:ring-emerald-500">
+                    <select id="v_purpose" class="w-full p-3 rounded-xl border outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="">Мета візиту</option>
+                        <option value="Аудит/Перевірка">Аудит/Перевірка</option>
+                        <option value="Монтаж/Ремонт">Монтаж/Ремонт</option>
+                        <option value="Переговори">Переговори</option>
+                        <option value="Інше">Інше</option>
+                    </select>
+                    <input type="text" id="v_purposeOther" placeholder="Вкажіть іншу мету" class="hidden w-full p-3 rounded-xl border outline-none focus:ring-2 focus:ring-emerald-500">
+                    <select id="v_accompany" class="w-full p-3 rounded-xl border outline-none focus:ring-2 focus:ring-emerald-500"><option value="">Оберіть співробітника, що супроводжує</option></select>
                 </div>
-            </div>
-
-            <div class="card p-5 rounded-2xl shadow-sm" id="vf-medical">
+             </div>
+             <div class="card p-5 rounded-2xl shadow-sm" id="vf-medical">
                 <h2 class="text-lg font-bold mb-2 text-emerald-600 border-b pb-2">БЛОК 2. МЕДИЧНА ДЕКЛАРАЦІЯ 🩺</h2>
                 <p class="text-sm text-gray-600 mb-4">Будь ласка, дайте чесну відповідь на наступні запитання. Позначте «Так» або «Ні». Чи спостерігались у Вас протягом останніх 48 годин або є зараз наступні симптоми/стани:</p>
-                
-                <div class="space-y-4" id="medicalQuestions">
-                </div>
-
-                <div id="v_medWarning" class="hidden mt-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-800 rounded-r-lg text-sm font-medium">
-                    ⚠️ Увага: Оскільки Ви надали відповідь «Так» на одне або кілька запитань, доступ у виробничі зони може бути обмежений або заборонений.
-                </div>
-            </div>
-
-            <div class="card p-5 rounded-2xl shadow-sm">
-                <h2 class="text-lg font-bold mb-4 text-emerald-600 border-b pb-2">БЛОК 3. ПРАВИЛА ПОВЕДІНКИ ТА ГІГІЄНИ 🛑</h2>
-                <p class="text-sm mb-3 font-medium">Я зобов'язуюсь дотримуватися таких правил під час перебування на підприємстві:</p>
-                <ul class="space-y-3 text-sm text-gray-700">
-                    <li class="flex items-start"><span class="mr-2 text-xl">🧼</span> <span><b>Санітарія:</b> Ретельно вимити та продезінфікувати руки перед входом у виробничу зону.</span></li>
-                    <li class="flex items-start"><span class="mr-2 text-xl">🥼</span> <span><b>Спецодяг:</b> Одягнути наданий санітарний одяг (халат, бахіли/змінне взуття, шапочку, що повністю закриває волосся та вуха, набородник).</span></li>
-                    <li class="flex items-start"><span class="mr-2 text-xl">💍</span> <span><b>Прикраси:</b> Зняти всі прикраси (годинники, каблучки, сережки, ланцюжки), крім гладкої обручки без камінців.</span></li>
-                    <li class="flex items-start"><span class="mr-2 text-xl">🚫</span> <span><b>Заборонені предмети:</b> Не проносити в цехи скло, крихкий пластик, їжу, напої, ліки, жувальну гумку, сигарети. Телефони тримати у надійних кишенях нижче пояса.</span></li>
-                    <li class="flex items-start"><span class="mr-2 text-xl">🧴</span> <span><b>Продукт:</b> Не торкатися сировини, напівфабрикатів та відкритих частин обладнання без дозволу.</span></li>
-                    <li class="flex items-start"><span class="mr-2 text-xl">🚶</span> <span><b>Пересування:</b> Пересуватися територією виключно у супроводі відповідального співробітника.</span></li>
-                </ul>
-            </div>
-
-            <div class="card p-5 rounded-2xl shadow-sm" id="vf-confirm">
+                <div class="space-y-4" id="medicalQuestions"></div>
+                <div id="v_medWarning" class="hidden mt-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-800 rounded-r-lg text-sm font-medium">⚠️ Увага: Оскільки Ви надали відповідь «Так» на одне або кілька запитань, доступ у виробничі зони може бути обмежений або заборонений.</div>
+             </div>
+             <div class="card p-5 rounded-2xl shadow-sm" id="vf-confirm">
                 <h2 class="text-lg font-bold mb-4 text-emerald-600 border-b pb-2">БЛОК 4. ПІДТВЕРДЖЕННЯ ✍️</h2>
-                
-                <label class="flex items-start gap-3 cursor-pointer mb-6 p-3 bg-gray-50 rounded-xl">
-                    <input type="checkbox" id="v_agree" class="custom-checkbox mt-1">
-                    <span class="text-sm text-gray-700 leading-tight">Я підтверджую, що надана мною інформація є правдивою, і я ознайомлений(а) з правилами поведінки. Я розумію, що недотримання правил може призвести до припинення візиту.</span>
-                </label>
-
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-semibold mb-1 text-gray-500">Підпис відвідувача (Введіть ПІБ)</label>
-                        <input type="text" id="v_signVisitor" class="w-full p-2 border-b-2 border-gray-300 bg-transparent focus:border-emerald-500 outline-none font-medium italic">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold mb-1 text-gray-500">Дозвіл на вхід (Підпис супроводжуючої особи)</label>
-                        <select id="v_signHost" class="w-full p-2 border-b-2 border-gray-300 bg-transparent focus:border-emerald-500 outline-none font-medium italic">
-                            <option value="">Оберіть особу, що дозволила вхід</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="mt-6 border-t pt-4 border-dashed border-gray-300">
-                    <h3 class="text-sm font-bold text-gray-500 mb-2 uppercase">Службова відмітка (для підрядників)</h3>
-                    <label class="flex items-center gap-3 cursor-pointer mb-3">
-                        <input type="checkbox" id="v_toolsCheck" class="custom-checkbox">
-                        <span class="text-sm font-medium">Облік інструментів та деталей</span>
-                    </label>
-                    <div id="v_toolsInputs" class="hidden flex gap-4 pl-8">
-                        <div class="flex-1">
-                            <label class="text-xs text-gray-500">Вхід (шт):</label>
-                            <input type="number" id="v_toolsIn" class="w-full p-2 rounded-lg border border-gray-300 bg-transparent outline-none">
-                        </div>
-                        <div class="flex-1">
-                            <label class="text-xs text-gray-500">Вихід (шт):</label>
-                            <input type="number" id="v_toolsOut" class="w-full p-2 rounded-lg border border-gray-300 bg-transparent outline-none">
-                        </div>
-                    </div>
-                </div>
+                <label class="flex items-start gap-3 cursor-pointer mb-6 p-3 bg-gray-50 rounded-xl"><input type="checkbox" id="v_agree" class="custom-checkbox mt-1"><span class="text-sm text-gray-700 leading-tight">Я підтверджую, що надана мною інформація є правдивою, і я ознайомлений(а) з правилами поведінки. Я розумію, що недотримання правил може призвести до припинення візиту.</span></label>
+                <input type="text" id="v_signVisitor" placeholder="Підпис відвідувача (ПІБ)" class="w-full p-2 border-b outline-none italic mb-4">
+                <select id="v_signHost" class="w-full p-2 border-b outline-none italic"><option value="">Дозвіл на вхід (Підпис супроводжуючої особи)</option></select>
+                <div class="mt-6 border-t pt-4"><label class="flex items-center gap-3"><input type="checkbox" id="v_toolsCheck" class="custom-checkbox"><span class="text-sm font-medium">Облік інструментів та деталей</span></label>
+                <div id="v_toolsInputs" class="hidden flex gap-4 pl-8 mt-2"><input type="number" id="v_toolsIn" placeholder="Вхід (шт)" class="w-full p-2 border rounded-lg"><input type="number" id="v_toolsOut" placeholder="Вихід (шт)" class="w-full p-2 border rounded-lg"></div></div>
                 <p class="error-msg hidden text-red-500 text-sm mt-4 font-semibold">Будь ласка, заповніть всі обов'язкові поля цього блоку</p>
-            </div>
-
-            <div class="pt-2">
-                <button id="submitVisitorBtn" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xl font-bold rounded-2xl shadow-lg transition-transform transform active:scale-95 flex items-center justify-center">
-                    Зареєструвати візитера
-                </button>
-            </div>
+             </div>
+             <button id="submitVisitorBtn" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xl font-bold rounded-2xl">Зареєструвати візитера</button>
         </div>
 
         <div id="feedback-view" class="hidden space-y-5">
             <div class="card p-6 sm:p-8 rounded-3xl shadow-lg text-center bg-white border-emerald-500 border-t-4">
                 <h2 class="text-2xl sm:text-3xl font-bold mb-8 text-slate-800">Дякуємо за роботу! <br><span class="text-lg sm:text-xl text-slate-500 font-medium">Оцініть, як пройшла зміна:</span></h2>
-                
                 <div class="flex flex-col gap-4">
-                    <button class="feedback-btn bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 p-5 rounded-2xl font-bold text-lg sm:text-xl transition-all shadow-sm transform active:scale-95" data-val="Все чудово ✅">
-                        Все чудово ✅
-                    </button>
-                    <button class="feedback-btn bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 p-5 rounded-2xl font-bold text-lg sm:text-xl transition-all shadow-sm transform active:scale-95" data-val="Були проблеми з обладнанням ⚠️">
-                        Були проблеми з обладнанням ⚠️
-                    </button>
-                    <button class="feedback-btn bg-red-50 hover:bg-red-100 border border-red-200 text-red-800 p-5 rounded-2xl font-bold text-lg sm:text-xl transition-all shadow-sm transform active:scale-95" data-val="Потрібна увага керівника 🆘">
-                        Потрібна увага керівника 🆘
-                    </button>
+                    <button class="feedback-btn bg-emerald-50 border border-emerald-200 text-emerald-800 p-5 rounded-2xl font-bold text-lg sm:text-xl transform active:scale-95" data-val="Все чудово ✅">Все чудово ✅</button>
+                    <button class="feedback-btn bg-amber-50 border border-amber-200 text-amber-800 p-5 rounded-2xl font-bold text-lg sm:text-xl transform active:scale-95" data-val="Були проблеми з обладнанням ⚠️">Були проблеми з обладнанням ⚠️</button>
+                    <button class="feedback-btn bg-red-50 border border-red-200 text-red-800 p-5 rounded-2xl font-bold text-lg sm:text-xl transform active:scale-95" data-val="Потрібна увага керівника 🆘">Потрібна увага керівника 🆘</button>
                 </div>
             </div>
         </div>
-
     </div>
 
+    <!-- Modals and Toasts -->
     <div id="customToast" class="fixed inset-0 hidden items-center justify-center modal-overlay z-[100] p-4 opacity-0 pointer-events-none">
         <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center toast-content scale-90 opacity-0" id="customToastContent">
-            <div class="text-6xl mb-4" id="toastIcon">👋</div>
-            <h3 class="text-2xl font-bold text-slate-800 leading-tight" id="toastMessage"></h3>
+            <div class="text-6xl mb-4" id="toastIcon"></div><h3 class="text-2xl font-bold leading-tight" id="toastMessage"></h3>
         </div>
     </div>
 
     <div id="statusModal" class="fixed inset-0 hidden items-center justify-center modal-overlay z-50 p-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center">
-            <h3 id="modalTitle" class="text-2xl font-bold mb-2 text-slate-800"></h3>
-            <p id="modalMessage" class="text-gray-600 mb-6 font-medium"></p>
-            <button id="closeModalBtn" class="w-full py-3 bg-gray-200 text-gray-800 rounded-xl font-bold hover:bg-gray-300 transition-colors">
-                Зрозуміло
-            </button>
-        </div>
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center"><h3 id="modalTitle" class="text-2xl font-bold mb-2"></h3><p id="modalMessage" class="mb-6"></p><button id="closeModalBtn" class="w-full py-3 bg-gray-200 rounded-xl font-bold">Зрозуміло</button></div>
     </div>
 
     <div id="visitorConfirmModal" class="fixed inset-0 hidden items-center justify-center modal-overlay z-[60] p-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
-            <h3 class="text-2xl font-bold mb-4 text-slate-800 text-center border-b pb-2">Перевірте дані візиту</h3>
-            
-            <div class="space-y-3 text-sm sm:text-base text-gray-700 mb-6 text-left" id="vc-details">
-            </div>
-
-            <div class="flex gap-3">
-                <button id="cancelVisitorBtn" class="flex-1 py-3 bg-gray-200 text-gray-800 rounded-xl font-bold hover:bg-gray-300 transition-colors">
-                    Редагувати
-                </button>
-                <button id="confirmVisitorBtn" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md transition-colors">
-                    Підтвердити
-                </button>
-            </div>
-        </div>
+        <div class="bg-white rounded-3xl p-6 w-full max-w-lg overflow-y-auto max-h-[90vh]"><h3 class="text-2xl font-bold mb-4 border-b pb-2 text-center">Перевірте дані візиту</h3><div id="vc-details" class="space-y-3 mb-6 text-sm"></div><div class="flex gap-3"><button id="cancelVisitorBtn" class="flex-1 py-3 bg-gray-200 rounded-xl font-bold">Редагувати</button><button id="confirmVisitorBtn" class="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold">Підтвердити</button></div></div>
     </div>
 
     <script>
-        // === ВАШЕ ПОСИЛАННЯ (Залишається незмінним) ===
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwhMnnzyutppuWEExwJzohQGlDOSGsYRtHhuYfEW-PdbMp3oYGOogSVzYqwONLUtMtg/exec'; 
-        
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz4P64ILpTos3dEPUPNsFi7U9exUNNPnAaUSsQUSXF6lUEzIdFSX5pmVaS1QlkeVE8B/exec'; 
         const OFFLINE_QUEUE_KEY = 'foodline_offline_queue';
         const SHIFT_STATES_KEY = 'foodline_shift_states'; 
 
-        let formState = {
-            employee: '',
-            action: '',
-            feeling: null,
-            symptoms: '',
-            feedback: ''
-        };
-
-        let visitorState = {};
-        let pendingVisitorPayload = null;
-
-        // === ОНОВЛЕНИЙ СПИСОК ПРАЦІВНИКІВ ===
         const employeesList = [
             "Бойко Світлана Петрівна", "Бондаренко Валерій Валентинович", "Вискірко Руслана Михайлівна",
             "Воробей Людмила Леонідівна", "Ворона Інна Василівна", "Ворожко Дарья Вячеславівна",
             "Галагін Євгеній Ярославович", "Гончарук Ольга Михайлівна", "Гора Андрій Олександрович",
             "Долинюк Олександр Миколайович", "Єрко Віктор Андрійович", "Загура Іван Борисович",
-            "Іванчук Олександр Анатолійович", "Корнієнко Жанна Василівна", "Кішка Сергій Володимирович",
+            "Іванчук Олександр Анатолійович", "Кірієнко Жанна Василівна", "Кішка Сергій Володимирович",
             "Козурак Іван Миколайович", "Козило Василь Вячеславович", "Кораблін Дмитро", 
             "Король Юрій Валерійович", "Кучера Галина Іванівна", "Лавриненко Максим Миколайович",
             "Максімюк Анатолій Анатолійович", "Максімюк Анатолій Вікторович", "Марків Олександр Йосипович",
@@ -460,23 +217,8 @@
             "Шута Олександра Сергіівна"
         ];
 
-        const hostsList = [
-            "Галагін Євгеній Ярославович",
-            "Шута Олександра Сергіївна",
-            "Соботович Лілія Михайлівна",
-            "Огаркова Марія Володимирівна",
-            "Гончарук Ольга Михайлівна",
-            "Бузницький Юрій",
-            "Диндар Анастасія"
-        ];
-
-        const signersList = [
-            "Галагін Євгеній Ярославович",
-            "Бузницький Юрій",
-            "Диндар Анастасія"
-        ];
-
-        // ПОВНІ ОРИГІНАЛЬНІ ЗАПИТАННЯ
+        const hostsList = ["Галагін Євгеній Ярославович", "Шута Олександра Сергіївна", "Соботович Лілія Михайлівна", "Огаркова Марія Володимирівна", "Гончарук Ольга Михайлівна", "Бузницький Юрій", "Диндар Анастасія"];
+        const signersList = ["Галагін Євгеній Ярославович", "Бузницький Юрій", "Диндар Анастасія"];
         const medQuestions = [
             { id: 'q1', text: 'Підвищена температура тіла, лихоманка?' },
             { id: 'q2', text: 'Розлади шлунково-кишкового тракту (нудота, діарея, блювота)?' },
@@ -486,297 +228,170 @@
             { id: 'q6', text: 'Чи контактували Ви останнім часом із хворими на інфекційні захворювання?' }
         ];
 
-        document.addEventListener('DOMContentLoaded', () => {
-            initApp();
-        });
+        let formState = { employee: '', action: '', feeling: null, symptoms: '', feedback: '' };
+        let visitorState = {};
+        let pendingVisitorPayload = null;
+
+        document.addEventListener('DOMContentLoaded', initApp);
 
         function initApp() {
             populateSelects();
+            initSearchableDropdown();
             generateRatingButtons();
             generateMedQuestions();
             setupEventListeners();
             updateClock();
             setInterval(updateClock, 60000);
-            
             updateNetworkStatus();
-            window.addEventListener('online', () => {
-                updateNetworkStatus();
-                processOfflineQueue();
-            });
+            window.addEventListener('online', () => { updateNetworkStatus(); processOfflineQueue(); });
             window.addEventListener('offline', updateNetworkStatus);
         }
 
+        // --- ЛОГІКА ПОШУКУ ПО СПИСКУ ПРАЦІВНИКІВ ---
+        function initSearchableDropdown() {
+            const searchInput = document.getElementById('empSearchInput');
+            const dropdown = document.getElementById('empDropdown');
+
+            function renderList(filter = '') {
+                dropdown.innerHTML = '';
+                const filtered = employeesList.filter(emp => emp.toLowerCase().includes(filter.toLowerCase()));
+                if(filtered.length === 0) {
+                    dropdown.innerHTML = '<div class="p-3 text-gray-500">Нічого не знайдено</div>';
+                    return;
+                }
+                filtered.forEach(emp => {
+                    const item = document.createElement('div');
+                    item.className = 'p-3 hover:bg-emerald-50 cursor-pointer border-b border-gray-100 text-lg transition-colors';
+                    item.textContent = emp;
+                    item.onclick = () => {
+                        searchInput.value = emp;
+                        formState.employee = emp;
+                        dropdown.classList.add('hidden');
+                        clearError('field-employee');
+                    };
+                    dropdown.appendChild(item);
+                });
+            }
+
+            searchInput.addEventListener('focus', () => { dropdown.classList.remove('hidden'); renderList(searchInput.value); });
+            searchInput.addEventListener('input', (e) => { dropdown.classList.remove('hidden'); renderList(e.target.value); });
+            
+            document.addEventListener('click', (e) => {
+                if (!document.getElementById('empSearchContainer').contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        }
+
         function populateSelects() {
-            const empSelect = document.getElementById('employeeSelect');
-            empSelect.innerHTML = '<option value="">Оберіть зі списку</option>'; // Очищення
-            employeesList.forEach(emp => {
-                const option = document.createElement('option');
-                option.value = emp;
-                option.textContent = emp;
-                empSelect.appendChild(option);
-            });
-
             const hostSelect = document.getElementById('v_accompany');
-            hostsList.forEach(host => {
-                const option = document.createElement('option');
-                option.value = host;
-                option.textContent = host;
-                hostSelect.appendChild(option);
-            });
-
+            hostsList.forEach(h => hostSelect.add(new Option(h, h)));
             const signSelect = document.getElementById('v_signHost');
-            signersList.forEach(signer => {
-                const option = document.createElement('option');
-                option.value = signer;
-                option.textContent = signer;
-                signSelect.appendChild(option);
-            });
+            signersList.forEach(s => signSelect.add(new Option(s, s)));
         }
 
         function generateRatingButtons() {
             const container = document.getElementById('ratingContainer');
             for (let i = 1; i <= 10; i++) {
                 const btn = document.createElement('button');
-                btn.className = 'rating-btn py-3 sm:py-4 rounded-xl font-bold text-lg';
-                btn.textContent = i;
-                btn.dataset.val = i;
-                btn.addEventListener('click', () => setFeeling(i));
+                btn.className = 'rating-btn py-3 rounded-xl font-bold text-lg';
+                btn.textContent = i; btn.dataset.val = i;
+                btn.onclick = () => {
+                    document.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active'); formState.feeling = i; clearError('field-feeling');
+                };
                 container.appendChild(btn);
             }
         }
 
         function generateMedQuestions() {
             const container = document.getElementById('medicalQuestions');
-            medQuestions.forEach((q, index) => {
-                visitorState[q.id] = null; 
-                const html = `
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-gray-50 rounded-xl">
-                        <span class="text-sm font-medium flex-1">${index + 1}. ${q.text}</span>
-                        <div class="flex gap-2 w-full sm:w-auto">
-                            <button class="yn-btn px-4 py-2 rounded-lg font-bold" data-qid="${q.id}" data-val="Так">Так</button>
-                            <button class="yn-btn px-4 py-2 rounded-lg font-bold" data-qid="${q.id}" data-val="Ні">Ні</button>
-                        </div>
-                    </div>
-                `;
+            medQuestions.forEach((q, i) => {
+                visitorState[q.id] = null;
+                const html = `<div class="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-gray-50 rounded-xl">
+                    <span class="text-sm font-medium flex-1">${i+1}. ${q.text}</span>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <button class="yn-btn px-4 py-2 rounded-lg font-bold" data-qid="${q.id}" data-val="Так">Так</button>
+                        <button class="yn-btn px-4 py-2 rounded-lg font-bold" data-qid="${q.id}" data-val="Ні">Ні</button>
+                    </div></div>`;
                 container.insertAdjacentHTML('beforeend', html);
             });
         }
 
         function setupEventListeners() {
-            document.getElementById('navEmployee').addEventListener('click', () => switchTab('employee'));
-            document.getElementById('navVisitor').addEventListener('click', () => switchTab('visitor'));
-
-            document.getElementById('employeeSelect').addEventListener('change', (e) => {
-                formState.employee = e.target.value;
-                clearError('field-employee');
+            document.getElementById('navEmployee').onclick = () => switchTab('employee');
+            document.getElementById('navVisitor').onclick = () => switchTab('visitor');
+            document.querySelectorAll('.action-btn').forEach(btn => btn.onclick = () => {
+                document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected'); formState.action = btn.dataset.val; clearError('field-action');
             });
-
-            document.querySelectorAll('.action-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('selected'));
-                    btn.classList.add('selected');
-                    formState.action = btn.dataset.val;
-                    clearError('field-action');
-                });
+            document.querySelectorAll('.symptom-btn').forEach(btn => btn.onclick = () => {
+                document.querySelectorAll('.symptom-btn').forEach(b => b.classList.remove('active-yes', 'active-no'));
+                btn.classList.add(btn.dataset.val.includes('Так') ? 'active-yes' : 'active-no');
+                formState.symptoms = btn.dataset.val; clearError('field-symptoms');
             });
-
-            document.querySelectorAll('.symptom-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.symptom-btn').forEach(b => b.classList.remove('active-yes', 'active-no'));
-                    const val = btn.dataset.val;
-                    if(val.includes('Так')) btn.classList.add('active-yes');
-                    else btn.classList.add('active-no');
-                    formState.symptoms = val;
-                    clearError('field-symptoms');
-                });
-            });
-
-            document.getElementById('v_purpose').addEventListener('change', (e) => {
-                const otherInput = document.getElementById('v_purposeOther');
-                if(e.target.value === 'Інше') {
-                    otherInput.classList.remove('hidden');
-                } else {
-                    otherInput.classList.add('hidden');
-                    otherInput.value = '';
-                }
-            });
-
-            document.getElementById('medicalQuestions').addEventListener('click', (e) => {
+            document.getElementById('v_purpose').onchange = (e) => document.getElementById('v_purposeOther').classList.toggle('hidden', e.target.value !== 'Інше');
+            document.getElementById('medicalQuestions').onclick = (e) => {
                 if(e.target.classList.contains('yn-btn')) {
-                    const qid = e.target.dataset.qid;
-                    const val = e.target.dataset.val;
-                    const siblings = e.target.parentElement.querySelectorAll('.yn-btn');
-                    siblings.forEach(b => b.classList.remove('active-yes', 'active-no'));
-                    
-                    if(val === 'Так') e.target.classList.add('active-yes');
-                    else e.target.classList.add('active-no');
-                    
-                    visitorState[qid] = val;
-                    checkMedWarning();
+                    const qid = e.target.dataset.qid, val = e.target.dataset.val;
+                    e.target.parentElement.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('active-yes', 'active-no'));
+                    e.target.classList.add(val === 'Так' ? 'active-yes' : 'active-no');
+                    visitorState[qid] = val; document.getElementById('v_medWarning').classList.toggle('hidden', !Object.values(visitorState).includes('Так'));
                 }
-            });
-
-            document.getElementById('v_toolsCheck').addEventListener('change', (e) => {
-                const inputs = document.getElementById('v_toolsInputs');
-                if(e.target.checked) inputs.classList.remove('hidden');
-                else {
-                    inputs.classList.add('hidden');
-                    document.getElementById('v_toolsIn').value = '';
-                    document.getElementById('v_toolsOut').value = '';
-                }
-            });
-
-            document.getElementById('submitBtn').addEventListener('click', handleMainSubmit);
-            document.getElementById('submitVisitorBtn').addEventListener('click', handleVisitorSubmit);
-
-            document.getElementById('cancelVisitorBtn').addEventListener('click', () => {
-                document.getElementById('visitorConfirmModal').classList.add('hidden');
-                document.getElementById('visitorConfirmModal').classList.remove('flex');
-            });
-            
-            document.getElementById('confirmVisitorBtn').addEventListener('click', () => {
-                document.getElementById('visitorConfirmModal').classList.add('hidden');
-                document.getElementById('visitorConfirmModal').classList.remove('flex');
-                if(pendingVisitorPayload) {
-                    sendDataToGAS(pendingVisitorPayload, 'visitor');
-                }
-            });
-
-            document.querySelectorAll('.feedback-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    formState.feedback = btn.dataset.val;
-                    sendDataToGAS(formState, 'employee'); 
-                });
-            });
-
-            document.getElementById('closeModalBtn').addEventListener('click', () => {
-                document.getElementById('statusModal').classList.add('hidden');
-                document.getElementById('statusModal').classList.remove('flex');
-            });
-
-            document.getElementById('networkStatusBtn').addEventListener('click', processOfflineQueue);
+            };
+            document.getElementById('v_toolsCheck').onchange = (e) => document.getElementById('v_toolsInputs').classList.toggle('hidden', !e.target.checked);
+            document.getElementById('submitBtn').onclick = handleMainSubmit;
+            document.getElementById('submitVisitorBtn').onclick = handleVisitorSubmit;
+            document.getElementById('cancelVisitorBtn').onclick = () => { document.getElementById('visitorConfirmModal').classList.add('hidden'); };
+            document.getElementById('confirmVisitorBtn').onclick = () => { document.getElementById('visitorConfirmModal').classList.add('hidden'); if(pendingVisitorPayload) sendDataToGAS(pendingVisitorPayload, 'visitor'); };
+            document.querySelectorAll('.feedback-btn').forEach(btn => btn.onclick = () => { formState.feedback = btn.dataset.val; sendDataToGAS(formState, 'employee'); });
+            document.getElementById('closeModalBtn').onclick = () => { document.getElementById('statusModal').classList.add('hidden'); };
         }
 
         function switchTab(tab) {
-            document.getElementById('navEmployee').classList.remove('active');
-            document.getElementById('navVisitor').classList.remove('active');
-            
-            document.getElementById('main-form').classList.add('hidden');
+            document.getElementById('navEmployee').classList.toggle('active', tab === 'employee');
+            document.getElementById('navVisitor').classList.toggle('active', tab === 'visitor');
+            document.getElementById('main-form').classList.toggle('hidden', tab !== 'employee');
+            document.getElementById('visitor-form').classList.toggle('hidden', tab !== 'visitor');
             document.getElementById('feedback-view').classList.add('hidden');
-            document.getElementById('visitor-form').classList.add('hidden');
-
-            if(tab === 'employee') {
-                document.getElementById('navEmployee').classList.add('active');
-                document.getElementById('main-form').classList.remove('hidden');
-            } else {
-                document.getElementById('navVisitor').classList.add('active');
-                document.getElementById('visitor-form').classList.remove('hidden');
-            }
         }
 
-        function checkMedWarning() {
-            const hasYes = medQuestions.some(q => visitorState[q.id] === 'Так');
-            const warning = document.getElementById('v_medWarning');
-            if(hasYes) warning.classList.remove('hidden');
-            else warning.classList.add('hidden');
-        }
-
-        function setFeeling(val) {
-            document.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('active'));
-            const targetBtn = document.querySelector(`.rating-btn[data-val="${val}"]`);
-            if(targetBtn) {
-                targetBtn.classList.add('active');
-                formState.feeling = parseInt(val);
-                clearError('field-feeling');
-            }
-        }
-
-        // Повне скидання форми до початкового стану (ЗАТИРАННЯ ДАНИХ)
         function clearForm() {
-            formState = { employee: '', action: '', feeling: null, symptoms: '', feedback: '' }; 
-            document.getElementById('employeeSelect').value = ''; 
-            
-            document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('selected'));
-            document.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.symptom-btn').forEach(b => b.classList.remove('active-yes', 'active-no'));
-            
-            visitorState = {};
-            pendingVisitorPayload = null;
-            document.getElementById('v_fullName').value = '';
-            document.getElementById('v_company').value = '';
-            document.getElementById('v_position').value = '';
-            document.getElementById('v_purpose').value = '';
-            document.getElementById('v_purposeOther').value = '';
-            document.getElementById('v_purposeOther').classList.add('hidden');
-            document.getElementById('v_accompany').value = '';
-            
-            document.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('active-yes', 'active-no'));
-            document.getElementById('v_medWarning').classList.add('hidden');
-            
-            document.getElementById('v_agree').checked = false;
-            document.getElementById('v_signVisitor').value = '';
-            document.getElementById('v_signHost').value = '';
-            document.getElementById('v_toolsCheck').checked = false;
-            document.getElementById('v_toolsInputs').classList.add('hidden');
-            document.getElementById('v_toolsIn').value = '';
-            document.getElementById('v_toolsOut').value = '';
-
+            formState = { employee: '', action: '', feeling: null, symptoms: '', feedback: '' };
+            document.getElementById('empSearchInput').value = ''; // Очистка пошуку
+            document.querySelectorAll('.action-btn, .rating-btn, .symptom-btn').forEach(b => b.classList.remove('selected', 'active', 'active-yes', 'active-no'));
             document.querySelectorAll('.error-ring').forEach(el => el.classList.remove('error-ring'));
             document.querySelectorAll('.error-msg').forEach(el => el.classList.add('hidden'));
-
+            
+            visitorState = {}; pendingVisitorPayload = null;
+            ['v_fullName', 'v_company', 'v_position', 'v_purpose', 'v_purposeOther', 'v_accompany', 'v_signVisitor', 'v_signHost', 'v_toolsIn', 'v_toolsOut'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('v_purposeOther').classList.add('hidden');
+            document.getElementById('v_agree').checked = false; document.getElementById('v_toolsCheck').checked = false;
+            document.getElementById('v_toolsInputs').classList.add('hidden');
+            document.getElementById('v_medWarning').classList.add('hidden');
+            document.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('active-yes', 'active-no'));
+            
             switchTab('employee');
         }
 
-        function clearError(fieldId) {
-            const field = document.getElementById(fieldId);
-            if(field) {
-                field.classList.remove('error-ring');
-                const msg = field.querySelector('.error-msg');
-                if(msg) msg.classList.add('hidden');
-            }
-        }
-
-        function showError(fieldId) {
-            const field = document.getElementById(fieldId);
-            if(field) {
-                field.classList.add('error-ring');
-                const msg = field.querySelector('.error-msg');
-                if(msg) msg.classList.remove('hidden');
-                field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }
-
-        function validateMainForm() {
-            let isValid = true;
-            if (!formState.employee) { showError('field-employee'); isValid = false; }
-            if (!formState.feeling) { showError('field-feeling'); isValid = false; }
-            if (!formState.symptoms) { showError('field-symptoms'); isValid = false; }
-            if (!formState.action) { showError('field-action'); isValid = false; }
-            return isValid;
-        }
+        function clearError(id) { const el = document.getElementById(id); if(el) { el.classList.remove('error-ring'); el.querySelector('.error-msg').classList.add('hidden'); }}
+        function showError(id) { const el = document.getElementById(id); if(el) { el.classList.add('error-ring'); el.querySelector('.error-msg').classList.remove('hidden'); el.scrollIntoView({behavior:'smooth', block:'center'}); }}
 
         function handleMainSubmit() {
-            if (!validateMainForm()) return;
+            if(!formState.employee) return showError('field-employee');
+            if(!formState.feeling) return showError('field-feeling');
+            if(!formState.symptoms) return showError('field-symptoms');
+            if(!formState.action) return showError('field-action');
 
             const states = JSON.parse(localStorage.getItem(SHIFT_STATES_KEY) || '{}');
-            const currentState = states[formState.employee] || 'Кінець роботи';
-
-            if (formState.action === 'Початок роботи' && currentState === 'Початок роботи') {
-                showSystemModal('Помилка', `Ви вже почали зміну! Спочатку закінчіть попередню.`);
-                return;
-            }
-            if (formState.action === 'Кінець роботи' && currentState === 'Кінець роботи') {
-                showSystemModal('Помилка', `Ви ще не починали зміну! Спочатку зареєструйте початок.`);
-                return;
+            if (formState.action === states[formState.employee]) {
+                showSystemModal('Помилка', `Ви вже зареєстрували ${formState.action}. Спочатку зробіть іншу відмітку.`); return;
             }
 
-            if (formState.action === 'Кінець роботи') {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+            if(formState.action === 'Кінець роботи') {
                 document.getElementById('main-form').classList.add('hidden');
                 document.getElementById('feedback-view').classList.remove('hidden');
-            } else {
-                sendDataToGAS(formState, 'employee');
-            }
+            } else { sendDataToGAS(formState, 'employee'); }
         }
 
         function handleVisitorSubmit() {
@@ -786,217 +401,64 @@
             if(document.getElementById('v_purpose').value === 'Інше' && !document.getElementById('v_purposeOther').value.trim()) isValid = false;
             if(!isValid) showError('vf-info'); else clearError('vf-info');
 
-            let medsValid = true;
-            medQuestions.forEach(q => { if(!visitorState[q.id]) medsValid = false; });
+            let medsValid = true; medQuestions.forEach(q => { if(!visitorState[q.id]) medsValid = false; });
             if(!medsValid) { showError('vf-medical'); isValid = false; } else clearError('vf-medical');
 
             let confValid = true;
-            if(!document.getElementById('v_agree').checked) confValid = false;
-            if(!document.getElementById('v_signVisitor').value.trim()) confValid = false;
-            if(!document.getElementById('v_signHost').value.trim()) confValid = false;
+            if(!document.getElementById('v_agree').checked || !document.getElementById('v_signVisitor').value.trim() || !document.getElementById('v_signHost').value.trim()) confValid = false;
             if(!confValid) { showError('vf-confirm'); isValid = false; } else clearError('vf-confirm');
 
             if (!isValid) return;
 
-            let medAnswers = [];
-            medQuestions.forEach((q, i) => { medAnswers.push(`${i+1}. ${visitorState[q.id]}`); });
-            let purpose = document.getElementById('v_purpose').value;
-            if(purpose === 'Інше') purpose = `Інше: ${document.getElementById('v_purposeOther').value}`;
+            let medAnswers = []; medQuestions.forEach((q, i) => { medAnswers.push(`${i+1}. ${visitorState[q.id]}`); });
+            let purpose = document.getElementById('v_purpose').value === 'Інше' ? `Інше: ${document.getElementById('v_purposeOther').value}` : document.getElementById('v_purpose').value;
 
-            const payloadData = {
-                v_fullName: document.getElementById('v_fullName').value.trim(),
-                v_company: document.getElementById('v_company').value.trim(),
-                v_position: document.getElementById('v_position').value.trim(),
-                v_purpose: purpose,
-                v_accompany: document.getElementById('v_accompany').value,
-                v_medStatus: medAnswers.join(' | '),
-                v_signVisitor: document.getElementById('v_signVisitor').value.trim(),
-                v_signHost: document.getElementById('v_signHost').value,
-                v_toolsLog: document.getElementById('v_toolsCheck').checked ? `Вхід: ${document.getElementById('v_toolsIn').value || 0}, Вихід: ${document.getElementById('v_toolsOut').value || 0}` : 'Немає'
+            pendingVisitorPayload = {
+                v_fullName: document.getElementById('v_fullName').value.trim(), v_company: document.getElementById('v_company').value.trim(), v_position: document.getElementById('v_position').value.trim(),
+                v_purpose: purpose, v_accompany: document.getElementById('v_accompany').value, v_medStatus: medAnswers.join(' | '),
+                v_signVisitor: document.getElementById('v_signVisitor').value.trim(), v_signHost: document.getElementById('v_signHost').value,
+                v_toolsLog: document.getElementById('v_toolsCheck').checked ? `Вхід: ${document.getElementById('v_toolsIn').value||0}, Вихід: ${document.getElementById('v_toolsOut').value||0}` : 'Немає'
             };
-
-            pendingVisitorPayload = payloadData;
-            const hasMedRisk = medAnswers.some(a => a.includes('Так'));
-            const medHtml = hasMedRisk ? '<span class="text-red-500 font-bold">Є симптоми ⚠️</span>' : '<span class="text-emerald-600 font-bold">Все в нормі ✅</span>';
             
-            const detailsHtml = `
-                <p><b class="text-slate-900">ПІБ:</b> ${payloadData.v_fullName}</p>
-                <p><b class="text-slate-900">Компанія:</b> ${payloadData.v_company}</p>
-                <p><b class="text-slate-900">Посада:</b> ${payloadData.v_position}</p>
-                <p><b class="text-slate-900">Мета:</b> ${payloadData.v_purpose}</p>
-                <p><b class="text-slate-900">Супроводжуючий:</b> ${payloadData.v_accompany}</p>
-                <p><b class="text-slate-900">Медичний статус:</b> ${medHtml}</p>
-                <p><b class="text-slate-900">Інструменти:</b> ${payloadData.v_toolsLog}</p>
-            `;
-            document.getElementById('vc-details').innerHTML = detailsHtml;
-            const modal = document.getElementById('visitorConfirmModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function getNameAndPatronymic(fullName) {
-            if (!fullName) return '';
-            const parts = fullName.split(' ');
-            if (parts.length >= 3) return `${parts[1]} ${parts[2]}`; 
-            if (parts.length === 2) return parts[1];
-            return fullName;
+            const hasMedRisk = medAnswers.some(a => a.includes('Так'));
+            document.getElementById('vc-details').innerHTML = `<p><b>ПІБ:</b> ${pendingVisitorPayload.v_fullName}</p><p><b>Компанія:</b> ${pendingVisitorPayload.v_company}</p><p><b>Супроводжуючий:</b> ${pendingVisitorPayload.v_accompany}</p><p><b>Медичний статус:</b> ${hasMedRisk ? '<span class="text-red-500 font-bold">Є симптоми ⚠️</span>' : '<span class="text-emerald-600 font-bold">Все в нормі ✅</span>'}</p>`;
+            document.getElementById('visitorConfirmModal').classList.remove('hidden'); document.getElementById('visitorConfirmModal').classList.add('flex');
         }
 
         function sendDataToGAS(data, type) {
-            const isEmployeeStart = (type === 'employee' && data.action === 'Початок роботи');
-            const name = type === 'employee' ? getNameAndPatronymic(data.employee) : data.v_fullName;
-
-            const payload = {
-                formType: type,
-                timestamp: new Date().toISOString(),
-                ...data
-            };
-
-            if (type === 'employee') {
+            const payload = { formType: type, timestamp: new Date().toISOString(), ...data };
+            if(type === 'employee') {
                 const states = JSON.parse(localStorage.getItem(SHIFT_STATES_KEY) || '{}');
-                states[data.employee] = data.action;
-                localStorage.setItem(SHIFT_STATES_KEY, JSON.stringify(states));
+                states[data.employee] = data.action; localStorage.setItem(SHIFT_STATES_KEY, JSON.stringify(states));
             }
-
-            if (!navigator.onLine) {
-                saveToOfflineQueue(payload);
-                triggerSuccessToast(type, isEmployeeStart, name, true);
-                resetUI(type, isEmployeeStart);
-                return;
-            }
-
-            triggerSuccessToast(type, isEmployeeStart, name, false);
-            resetUI(type, isEmployeeStart);
-
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            }).catch(error => {
-                console.error("Помилка фонової відправки", error);
-                saveToOfflineQueue(payload);
-            });
-        }
-
-        function triggerSuccessToast(type, isEmployeeStart, name, isOffline) {
-            const offlineText = isOffline ? " (Збережено офлайн)" : "";
-            if (type === 'employee') {
-                if (isEmployeeStart) {
-                    showToast(`Доброго ранку!\n${name},\nбажаємо вам хорошого робочого дня!${offlineText}`, "☀️", 3000);
-                } else {
-                    showToast(`${name},\nДякуємо за вашу роботу сьогодні.\nГарного відпочинку та до зустрічі!${offlineText}`, "🌙", 3500);
-                }
-            } else {
-                showToast(`Візитера успішно зареєстровано!${offlineText}`, "✅", 2500);
-            }
-        }
-
-        function resetUI(type, isStart) {
-            if (type === 'employee') {
-                if (isStart) {
-                    const btn = document.getElementById('submitBtn');
-                    btn.disabled = false;
-                    btn.innerHTML = 'Відправити';
-                } else {
-                    document.querySelectorAll('.feedback-btn').forEach(b => { b.disabled = false; b.classList.remove('opacity-50'); });
-                }
-            } else {
-                const btn = document.getElementById('submitVisitorBtn');
-                btn.disabled = false;
-                btn.innerHTML = 'Зареєструвати візитера';
-            }
-        }
-
-        function showToast(message, icon, duration) {
-            const toast = document.getElementById('customToast');
-            const content = document.getElementById('customToastContent');
+            if(!navigator.onLine) { saveToOfflineQueue(payload); showToast(data.action === 'Початок роботи' ? "Доброго ранку! (Офлайн)" : "Дякуємо! (Офлайн)", "📶", 3000); return; }
             
-            document.getElementById('toastMessage').innerText = message;
-            document.getElementById('toastIcon').textContent = icon;
-            
-            toast.classList.remove('hidden');
-            requestAnimationFrame(() => {
-                toast.classList.remove('opacity-0');
-                content.classList.remove('scale-90', 'opacity-0');
-                content.classList.add('scale-100', 'opacity-100');
-            });
-
-            setTimeout(() => {
-                toast.classList.add('opacity-0');
-                content.classList.remove('scale-100', 'opacity-100');
-                content.classList.add('scale-90', 'opacity-0');
-                
-                setTimeout(() => {
-                    toast.classList.add('hidden');
-                    clearForm(); // ПОВНЕ ОЧИЩЕННЯ ФОРМИ (включно з ПІБ)
-                }, 300);
-            }, duration);
+            showToast(data.action === 'Початок роботи' ? "Доброго ранку!" : "Дякуємо!", "☀️", 3000);
+            fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).catch(e => saveToOfflineQueue(payload));
         }
 
-        function showSystemModal(title, message) {
-            const modal = document.getElementById('statusModal');
-            document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalMessage').textContent = message;
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+        function showToast(m, i, d) {
+            document.getElementById('toastMessage').innerText = m; document.getElementById('toastIcon').textContent = i;
+            const t = document.getElementById('customToast'), c = document.getElementById('customToastContent');
+            t.classList.remove('hidden'); requestAnimationFrame(() => { t.classList.remove('opacity-0'); c.classList.remove('scale-90', 'opacity-0'); c.classList.add('scale-100', 'opacity-100'); });
+            setTimeout(() => { t.classList.add('opacity-0'); c.classList.remove('scale-100', 'opacity-100'); c.classList.add('scale-90', 'opacity-0'); setTimeout(() => { t.classList.add('hidden'); clearForm(); }, 300); }, d);
         }
 
-        function saveToOfflineQueue(payload) {
-            const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
-            queue.push(payload);
-            localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
-            updateNetworkStatus();
-        }
-
+        function showSystemModal(t, m) { document.getElementById('modalTitle').textContent = t; document.getElementById('modalMessage').textContent = m; document.getElementById('statusModal').classList.remove('hidden'); document.getElementById('statusModal').classList.add('flex'); }
+        function saveToOfflineQueue(p) { const q = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]'); q.push(p); localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(q)); updateNetworkStatus(); }
         async function processOfflineQueue() {
             if (!navigator.onLine) return;
-            const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
-            if (queue.length === 0) return;
-
-            document.getElementById('statusDot').className = 'w-2 h-2 rounded-full bg-yellow-500 animate-pulse';
-            document.getElementById('statusText').textContent = 'Синхронізація...';
-
-            const newQueue = [];
-            for (const payload of queue) {
-                try {
-                    await fetch(GOOGLE_SCRIPT_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                } catch (e) {
-                    newQueue.push(payload);
-                }
-            }
-
-            localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(newQueue));
-            updateNetworkStatus();
+            const q = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]'); if (q.length === 0) return;
+            const newQ = [];
+            for (const p of q) { try { await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) }); } catch (e) { newQ.push(p); } }
+            localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(newQ)); updateNetworkStatus();
         }
-
         function updateNetworkStatus() {
-            const dot = document.getElementById('statusDot');
-            const text = document.getElementById('statusText');
-            const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
-            
-            if (!navigator.onLine) {
-                dot.className = 'w-2 h-2 rounded-full bg-red-500';
-                text.textContent = `Офлайн ${queue.length > 0 ? '(' + queue.length + ' в черзі)' : ''}`;
-            } else if (queue.length > 0) {
-                dot.className = 'w-2 h-2 rounded-full bg-red-500'; 
-                text.textContent = `Черга: ${queue.length} (Натисніть)`;
-            } else {
-                dot.className = 'w-2 h-2 rounded-full bg-green-500';
-                text.textContent = 'Онлайн';
-            }
+            const online = navigator.onLine, q = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+            document.getElementById('statusDot').className = `w-2 h-2 rounded-full ${online ? (q.length>0 ? 'bg-yellow-500 animate-pulse' : 'bg-green-500') : 'bg-red-500'}`;
+            document.getElementById('statusText').textContent = online ? (q.length>0 ? `Черга: ${q.length}` : 'Онлайн') : 'Офлайн';
         }
-
-        function updateClock() {
-            const now = new Date();
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-            document.getElementById('current-date').textContent = now.toLocaleDateString('uk-UA', options);
-        }
+        function updateClock() { document.getElementById('current-date').textContent = new Date().toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }); }
     </script>
 </body>
 </html>
