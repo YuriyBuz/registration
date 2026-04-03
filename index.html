@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Реєстрація початку / закінчення зміни</title>
-    <!-- Додаємо базовий PWA Manifest без примусового розтягування іконок -->
+    <!-- Додаємо базовий PWA Manifest -->
     <link rel="manifest" id="manifest-link">
     <meta name="theme-color" content="#10b981">
     <meta name="mobile-web-app-capable" content="yes">
@@ -51,14 +51,15 @@
 </head>
 <body class="font-sans antialiased">
     <script>
-        // Ініціалізація PWA Маніфесту (без примусового розтягування прямокутних картинок)
+        // Ініціалізація PWA Маніфесту (оригінальний варіант з іконкою)
         const manifest = {
             "name": "Реєстрація",
             "short_name": "Реєстрація",
             "start_url": ".",
             "display": "standalone",
             "background_color": "#f8fafc",
-            "theme_color": "#10b981"
+            "theme_color": "#10b981",
+            "icons": [{"src": "https://foodline-production.com/wp-content/uploads/2021/10/3752781497_3752781497.webp", "sizes": "192x192", "type": "image/webp"}]
         };
         document.getElementById('manifest-link').href = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
     </script>
