@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Реєстрація початку / закінчення зміни</title>
-    <!-- Додаємо PWA Manifest через Data URI для Google Apps Script -->
+    <!-- Додаємо базовий PWA Manifest без примусового розтягування іконок -->
     <link rel="manifest" id="manifest-link">
     <meta name="theme-color" content="#10b981">
-    <link rel="apple-touch-icon" href="https://foodline-production.com/wp-content/uploads/2021/10/3752781497_3752781497.webp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -49,15 +51,14 @@
 </head>
 <body class="font-sans antialiased">
     <script>
-        // Ініціалізація PWA Маніфесту
+        // Ініціалізація PWA Маніфесту (без примусового розтягування прямокутних картинок)
         const manifest = {
-            "name": "Реєстрація зміни Foodline",
-            "short_name": "Зміна",
+            "name": "Реєстрація",
+            "short_name": "Реєстрація",
             "start_url": ".",
             "display": "standalone",
             "background_color": "#f8fafc",
-            "theme_color": "#10b981",
-            "icons": [{"src": "https://foodline-production.com/wp-content/uploads/2021/10/3752781497_3752781497.webp", "sizes": "192x192", "type": "image/webp"}]
+            "theme_color": "#10b981"
         };
         document.getElementById('manifest-link').href = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
     </script>
@@ -200,10 +201,29 @@
     <!-- Вікно Дашборду -->
     <div id="dashDataModal" class="fixed inset-0 hidden items-center justify-center modal-overlay z-[80] p-2 sm:p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col relative overflow-hidden">
-            <div class="p-4 border-b flex justify-between items-center bg-emerald-50">
-                <h3 class="text-lg font-bold text-emerald-800">📊 Дашборд (СЬОГОДНІ)</h3>
-                <button id="closeDashDataBtn" class="text-gray-500 hover:text-red-500 font-bold p-2 text-xl">&times;</button>
+            
+            <div class="p-3 sm:p-4 border-b flex items-center justify-between bg-emerald-50 gap-2">
+                <h3 class="text-sm sm:text-lg font-bold text-emerald-800 whitespace-nowrap">📊 Дашборд</h3>
+                
+                <!-- МІНІ-ВІДЖЕТ СТАТИСТИКИ -->
+                <div class="flex flex-1 justify-end sm:justify-center gap-2 sm:gap-3 text-[10px] sm:text-xs">
+                    <div class="bg-white text-green-700 px-2 sm:px-3 py-1 rounded-lg border border-green-200 flex items-center gap-1 shadow-sm" title="На зміні">
+                        <span class="hidden sm:inline font-medium">На зміні:</span><span class="sm:hidden font-medium">🟢</span>
+                        <span class="font-bold text-sm sm:text-lg" id="statActive">0</span>
+                    </div>
+                    <div class="bg-white text-slate-700 px-2 sm:px-3 py-1 rounded-lg border border-slate-200 flex items-center gap-1 shadow-sm" title="Завершили">
+                        <span class="hidden sm:inline font-medium">Завершили:</span><span class="sm:hidden font-medium">⚪</span>
+                        <span class="font-bold text-sm sm:text-lg" id="statDone">0</span>
+                    </div>
+                    <div class="bg-white text-red-700 px-2 sm:px-3 py-1 rounded-lg border border-red-200 flex items-center gap-1 shadow-sm" title="Відсутні">
+                        <span class="hidden sm:inline font-medium">Відсутні:</span><span class="sm:hidden font-medium">🔴</span>
+                        <span class="font-bold text-sm sm:text-lg" id="statMissing">0</span>
+                    </div>
+                </div>
+
+                <button id="closeDashDataBtn" class="text-gray-500 hover:text-red-500 font-bold px-1 sm:px-2 text-2xl leading-none">&times;</button>
             </div>
+            
             <div class="p-0 overflow-auto flex-1 bg-slate-50 relative">
                 <div id="dashLoading" class="absolute inset-0 bg-white flex flex-col items-center justify-center z-10 hidden">
                     <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-emerald-600 mb-4"></div>
@@ -243,7 +263,6 @@
     </div>
 
     <script>
-        // НОВИЙ ЛІНК НА БЕКЕНД
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz0-sjqXolS0pyJyrlF5VzvPR2IRWGwPk5f4HrLdk1O9vVsbKBuDBuO23bSYoMXRcWT/exec'; 
         const OFFLINE_QUEUE_KEY = 'foodline_offline_queue';
         const SHIFT_STATES_KEY = 'foodline_shift_states'; 
@@ -557,25 +576,38 @@
                 .then(res => res.json())
                 .then(data => {
                     loader.classList.add('hidden');
+                    
+                    let activeCount = 0, doneCount = 0, missingCount = 0;
+                    
                     if(!data || data.length === 0) {
                         tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">Немає записів за сьогодні.</td></tr>';
-                        return;
+                    } else {
+                        data.forEach(row => {
+                            // Рахуємо статистику для віджета
+                            if (row.status.includes('процесі')) activeCount++;
+                            else if (row.status.includes('Завершена')) doneCount++;
+                            else if (row.status.includes('Прогул') || row.status.includes('Легально') || row.status.includes('з\'явився') || row.status.includes('відсутн')) missingCount++;
+                            
+                            let statusColor = row.status.includes('процесі') ? 'text-green-600' : (row.status.includes('з\'явився') || row.status.includes('Легально') ? 'text-red-500' : 'text-slate-600');
+                            let tr = `
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="p-2 border-b font-medium whitespace-nowrap">${row.name}</td>
+                                    <td class="p-2 border-b text-gray-500 hidden sm:table-cell">${row.position}</td>
+                                    <td class="p-2 border-b font-bold ${statusColor}">${row.status}</td>
+                                    <td class="p-2 border-b font-mono text-center">${row.start}</td>
+                                    <td class="p-2 border-b font-mono text-center">${row.end}</td>
+                                    <td class="p-2 border-b font-bold text-center">${row.hours}</td>
+                                    <td class="p-2 border-b text-gray-500 hidden sm:table-cell">${row.type}</td>
+                                </tr>
+                            `;
+                            tbody.insertAdjacentHTML('beforeend', tr);
+                        });
                     }
-                    data.forEach(row => {
-                        let statusColor = row.status.includes('процесі') ? 'text-green-600' : (row.status.includes('з\'явився') || row.status.includes('Легально') ? 'text-red-500' : 'text-slate-600');
-                        let tr = `
-                            <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="p-2 border-b font-medium whitespace-nowrap">${row.name}</td>
-                                <td class="p-2 border-b text-gray-500 hidden sm:table-cell">${row.position}</td>
-                                <td class="p-2 border-b font-bold ${statusColor}">${row.status}</td>
-                                <td class="p-2 border-b font-mono text-center">${row.start}</td>
-                                <td class="p-2 border-b font-mono text-center">${row.end}</td>
-                                <td class="p-2 border-b font-bold text-center">${row.hours}</td>
-                                <td class="p-2 border-b text-gray-500 hidden sm:table-cell">${row.type}</td>
-                            </tr>
-                        `;
-                        tbody.insertAdjacentHTML('beforeend', tr);
-                    });
+                    
+                    // Оновлюємо цифри у віджеті
+                    document.getElementById('statActive').textContent = activeCount;
+                    document.getElementById('statDone').textContent = doneCount;
+                    document.getElementById('statMissing').textContent = missingCount;
                 })
                 .catch(err => {
                     loader.classList.add('hidden');
