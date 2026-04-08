@@ -94,6 +94,9 @@
                 <select id="employeeSelect" class="block w-full p-3 border border-gray-300 rounded-xl bg-transparent text-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow">
                     <option value="">Оберіть зі списку</option>
                 </select>
+                <!-- Блок для відображення індивідуального графіка -->
+                <p id="employee-info" class="hidden text-sm text-emerald-700 mt-3 font-semibold bg-emerald-50 border border-emerald-100 p-3 rounded-xl"></p>
+                
                 <p class="error-msg hidden text-red-500 text-sm mt-2 font-semibold">Будь ласка, оберіть своє прізвище зі списку</p>
             </div>
 
@@ -175,6 +178,7 @@
                 <h2 class="text-2xl sm:text-3xl font-bold mb-8 text-slate-800">Дякуємо за роботу! <br><span class="text-lg sm:text-xl text-slate-500 font-medium">Оцініть, як пройшла зміна:</span></h2>
                 <div class="flex flex-col gap-4">
                     <button class="feedback-btn bg-emerald-50 border border-emerald-200 text-emerald-800 p-5 rounded-2xl font-bold text-lg sm:text-xl transform active:scale-95" data-val="Все чудово ✅">Все чудово ✅</button>
+                    <!-- Кнопка, яка надішле Email керівнику -->
                     <button class="feedback-btn bg-amber-50 border border-amber-200 text-amber-800 p-5 rounded-2xl font-bold text-lg sm:text-xl transform active:scale-95" data-val="Були проблеми з обладнанням ⚠️">Були проблеми з обладнанням ⚠️</button>
                     <button class="feedback-btn bg-red-50 border border-red-200 text-red-800 p-5 rounded-2xl font-bold text-lg sm:text-xl transform active:scale-95" data-val="Потрібна увага керівника 🆘">Потрібна увага керівника 🆘</button>
                 </div>
@@ -262,7 +266,7 @@
     </div>
 
     <script>
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz0-sjqXolS0pyJyrlF5VzvPR2IRWGwPk5f4HrLdk1O9vVsbKBuDBuO23bSYoMXRcWT/exec'; 
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzvUJ1HtAp4NsT_diYduktgYdgGPl_sp8AsFYRTsSq0t4znKk9mPgnA1KEtCypnC2xx/exec'; 
         const OFFLINE_QUEUE_KEY = 'foodline_offline_queue';
         const SHIFT_STATES_KEY = 'foodline_shift_states'; 
 
@@ -360,7 +364,24 @@
         function setupEventListeners() {
             document.getElementById('navEmployee').onclick = () => switchTab('employee');
             document.getElementById('navVisitor').onclick = () => switchTab('visitor');
-            document.getElementById('employeeSelect').onchange = (e) => { formState.employee = e.target.value; clearError('field-employee'); };
+            
+            // Оновлено логіку зміни співробітника для відображення графіка / типу зміни
+            document.getElementById('employeeSelect').onchange = (e) => { 
+                formState.employee = e.target.value; 
+                clearError('field-employee'); 
+                
+                const infoDiv = document.getElementById('employee-info');
+                if (formState.employee === "Попадюк Анжела Миколаївна") {
+                    infoDiv.innerHTML = "📅 Ваш очікуваний графік: <b>09:45 - 18:00</b>";
+                    infoDiv.classList.remove('hidden');
+                } else if (["Кішка Сергій Володимирович", "Сосновський Валерій Петрович"].includes(formState.employee)) {
+                    infoDiv.innerHTML = "🔥 Режим: <b>Дві доби підряд (48 годин)</b>";
+                    infoDiv.classList.remove('hidden');
+                } else {
+                    infoDiv.classList.add('hidden');
+                }
+            };
+
             document.querySelectorAll('.action-btn').forEach(btn => btn.onclick = () => {
                 document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected'); formState.action = btn.dataset.val; clearError('field-action');
@@ -424,6 +445,7 @@
         function clearForm() {
             formState = { employee: '', action: '', feeling: null, symptoms: '', feedback: '' };
             document.getElementById('employeeSelect').value = ''; 
+            document.getElementById('employee-info').classList.add('hidden');
             document.querySelectorAll('.action-btn, .rating-btn, .symptom-btn').forEach(b => b.classList.remove('selected', 'active', 'active-yes', 'active-no'));
             document.querySelectorAll('.error-ring').forEach(el => el.classList.remove('error-ring'));
             document.querySelectorAll('.error-msg').forEach(el => el.classList.add('hidden'));
@@ -504,6 +526,20 @@
             const payload = { formType: type, timestamp: new Date().toISOString(), ...data };
             
             if(type === 'employee') {
+                // 1. Умови для графіка Анжели та Котельників
+                if (data.employee === "Попадюк Анжела Миколаївна") {
+                    payload.expectedStart = "09:45";
+                    payload.expectedEnd = "18:00";
+                } else if (["Кішка Сергій Володимирович", "Сосновський Валерій Петрович"].includes(data.employee)) {
+                    // Флаг для бекенду (GAS), щоб не закривав цю зміну автоматично
+                    payload.isMultiDayShift = true; 
+                }
+
+                // 2. Умова для надсилання Email при проблемах з обладнанням
+                if (data.feedback && data.feedback.includes("проблеми з обладнанням")) {
+                    payload.alertEmail = "evgeniy.galagin@gmail.com";
+                }
+
                 const states = JSON.parse(localStorage.getItem(SHIFT_STATES_KEY) || '{}');
                 states[data.employee] = data.action; localStorage.setItem(SHIFT_STATES_KEY, JSON.stringify(states));
             }
@@ -554,6 +590,22 @@
         }
         function updateClock() { document.getElementById('current-date').textContent = new Date().toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }); }
 
+        // Допоміжна функція для перетворення десяткових годин у формат "Години:Хвилини" (наприклад: 8.5 -> 8:30)
+        function formatHoursToHHMM(hoursRaw) {
+            if (hoursRaw === null || hoursRaw === undefined || hoursRaw === '') return '';
+            const str = hoursRaw.toString().trim();
+            // Якщо значення вже відформатоване (наприклад, має двокрапку), залишаємо як є
+            if (str.includes(':')) return str;
+            
+            const hFloat = parseFloat(str.replace(',', '.'));
+            if (isNaN(hFloat)) return str;
+            
+            const totalMins = Math.round(hFloat * 60);
+            const h = Math.floor(totalMins / 60);
+            const m = Math.abs(totalMins % 60);
+            return `${h}:${m.toString().padStart(2, '0')}`;
+        }
+
         // Логіка Дашборду
         function openDashboard() {
             const modal = document.getElementById('dashDataModal');
@@ -588,6 +640,10 @@
                             else if (row.status.includes('Прогул') || row.status.includes('Легально') || row.status.includes('з\'явився') || row.status.includes('відсутн')) missingCount++;
                             
                             let statusColor = row.status.includes('процесі') ? 'text-green-600' : (row.status.includes('з\'явився') || row.status.includes('Легально') ? 'text-red-500' : 'text-slate-600');
+                            
+                            // Використовуємо формат "Години:Хвилини"
+                            let formattedHours = formatHoursToHHMM(row.hours);
+
                             let tr = `
                                 <tr class="hover:bg-slate-50 transition-colors">
                                     <td class="p-2 border-b font-medium whitespace-nowrap">${row.name}</td>
@@ -595,7 +651,7 @@
                                     <td class="p-2 border-b font-bold ${statusColor}">${row.status}</td>
                                     <td class="p-2 border-b font-mono text-center">${row.start}</td>
                                     <td class="p-2 border-b font-mono text-center">${row.end}</td>
-                                    <td class="p-2 border-b font-bold text-center">${row.hours}</td>
+                                    <td class="p-2 border-b font-bold text-center">${formattedHours}</td>
                                     <td class="p-2 border-b text-gray-500 hidden sm:table-cell">${row.type}</td>
                                 </tr>
                             `;
