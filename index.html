@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Реєстрація початку / закінчення зміни</title>
-    <!-- Додаємо PWA Manifest через Data URI для Google Apps Script -->
+    <!-- Додаємо PWA Manifest -->
     <link rel="manifest" id="manifest-link">
     <meta name="theme-color" content="#10b981">
     <link rel="apple-touch-icon" href="https://foodline-production.com/wp-content/uploads/2021/10/3752781497_3752781497.webp">
@@ -49,7 +49,6 @@
 </head>
 <body class="font-sans antialiased">
     <script>
-        // Ініціалізація PWA Маніфесту (оригінальний варіант з іконкою)
         const manifest = {
             "name": "Реєстрація",
             "short_name": "Реєстрація",
@@ -91,12 +90,13 @@
             
             <div class="card p-5 rounded-2xl shadow-sm transition-all" id="field-employee">
                 <label for="employeeSelect" class="block text-lg font-bold mb-3">Ваше прізвище та ім'я</label>
-                <select id="employeeSelect" class="block w-full p-3 border border-gray-300 rounded-xl bg-transparent text-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow">
-                    <option value="">Оберіть зі списку</option>
-                </select>
+                <!-- РОЗУМНИЙ ПОШУК ЗАМІСТЬ SELECT -->
+                <div class="relative" id="empSearchContainer">
+                    <input type="text" id="empSearchInput" placeholder="Почніть вводити прізвище..." class="w-full p-3 border border-gray-300 rounded-xl bg-transparent text-lg focus:ring-2 focus:ring-emerald-500 outline-none" autocomplete="off">
+                    <div id="empDropdown" class="hidden absolute z-10 w-full bg-white border border-gray-200 rounded-xl mt-1 shadow-xl max-h-60 overflow-y-auto"></div>
+                </div>
                 <!-- Блок для відображення індивідуального графіка -->
                 <p id="employee-info" class="hidden text-sm text-emerald-700 mt-3 font-semibold bg-emerald-50 border border-emerald-100 p-3 rounded-xl"></p>
-                
                 <p class="error-msg hidden text-red-500 text-sm mt-2 font-semibold">Будь ласка, оберіть своє прізвище зі списку</p>
             </div>
 
@@ -154,13 +154,17 @@
                     <input type="text" id="v_purposeOther" placeholder="Вкажіть іншу мету" class="hidden w-full p-3 rounded-xl border outline-none focus:ring-2 focus:ring-emerald-500">
                     <select id="v_accompany" class="w-full p-3 rounded-xl border outline-none focus:ring-2 focus:ring-emerald-500"><option value="">Оберіть співробітника, що супроводжує</option></select>
                 </div>
+                <p class="error-msg hidden text-red-500 text-sm mt-4 font-semibold">Будь ласка, заповніть всі поля інфо-блоку</p>
              </div>
+             
              <div class="card p-5 rounded-2xl shadow-sm" id="vf-medical">
                 <h2 class="text-lg font-bold mb-2 text-emerald-600 border-b pb-2">БЛОК 2. МЕДИЧНА ДЕКЛАРАЦІЯ 🩺</h2>
                 <p class="text-sm text-gray-600 mb-4">Будь ласка, дайте чесну відповідь на наступні запитання. Позначте «Так» або «Ні». Чи спостерігались у Вас протягом останніх 48 годин або є зараз наступні симптоми/стани:</p>
                 <div class="space-y-4" id="medicalQuestions"></div>
                 <div id="v_medWarning" class="hidden mt-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-800 rounded-r-lg text-sm font-medium">⚠️ Увага: Оскільки Ви надали відповідь «Так» на одне або кілька запитань, доступ у виробничі зони може бути обмежений або заборонений.</div>
+                <p class="error-msg hidden text-red-500 text-sm mt-4 font-semibold">Будь ласка, дайте відповіді на всі запитання</p>
              </div>
+
              <div class="card p-5 rounded-2xl shadow-sm" id="vf-confirm">
                 <h2 class="text-lg font-bold mb-4 text-emerald-600 border-b pb-2">БЛОК 4. ПІДТВЕРДЖЕННЯ ✍️</h2>
                 <label class="flex items-start gap-3 cursor-pointer mb-6 p-3 bg-gray-50 rounded-xl"><input type="checkbox" id="v_agree" class="custom-checkbox mt-1"><span class="text-sm text-gray-700 leading-tight">Я підтверджую, що надана мною інформація є правдивою, і я ознайомлений(а) з правилами поведінки. Я розумію, що недотримання правил може призвести до припинення візиту.</span></label>
@@ -178,7 +182,6 @@
                 <h2 class="text-2xl sm:text-3xl font-bold mb-8 text-slate-800">Дякуємо за роботу! <br><span class="text-lg sm:text-xl text-slate-500 font-medium">Оцініть, як пройшла зміна:</span></h2>
                 <div class="flex flex-col gap-4">
                     <button class="feedback-btn bg-emerald-50 border border-emerald-200 text-emerald-800 p-5 rounded-2xl font-bold text-lg sm:text-xl transform active:scale-95" data-val="Все чудово ✅">Все чудово ✅</button>
-                    <!-- Кнопка, яка надішле Email керівнику -->
                     <button class="feedback-btn bg-amber-50 border border-amber-200 text-amber-800 p-5 rounded-2xl font-bold text-lg sm:text-xl transform active:scale-95" data-val="Були проблеми з обладнанням ⚠️">Були проблеми з обладнанням ⚠️</button>
                     <button class="feedback-btn bg-red-50 border border-red-200 text-red-800 p-5 rounded-2xl font-bold text-lg sm:text-xl transform active:scale-95" data-val="Потрібна увага керівника 🆘">Потрібна увага керівника 🆘</button>
                 </div>
@@ -262,7 +265,14 @@
     </div>
 
     <div id="visitorConfirmModal" class="fixed inset-0 hidden items-center justify-center modal-overlay z-[60] p-4">
-        <div class="bg-white rounded-3xl p-6 w-full max-w-lg overflow-y-auto max-h-[90vh]"><h3 class="text-2xl font-bold mb-4 border-b pb-2 text-center">Перевірте дані візиту</h3><div id="vc-details" class="space-y-3 mb-6 text-sm"></div><div class="flex gap-3"><button id="cancelVisitorBtn" class="flex-1 py-3 bg-gray-200 rounded-xl font-bold">Редагувати</button><button id="confirmVisitorBtn" class="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold">Підтвердити</button></div></div>
+        <div class="bg-white rounded-3xl p-6 w-full max-w-lg overflow-y-auto max-h-[90vh]">
+            <h3 class="text-2xl font-bold mb-4 border-b pb-2 text-center">Перевірте дані візиту</h3>
+            <div id="vc-details" class="space-y-3 mb-6 text-sm"></div>
+            <div class="flex gap-3">
+                <button id="cancelVisitorBtn" class="flex-1 py-3 bg-gray-200 rounded-xl font-bold">Редагувати</button>
+                <button id="confirmVisitorBtn" class="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold">Підтвердити</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -307,6 +317,7 @@
 
         function initApp() {
             populateSelects();
+            initSearchableDropdown();
             generateRatingButtons();
             generateMedQuestions();
             setupEventListeners();
@@ -317,16 +328,57 @@
             window.addEventListener('offline', updateNetworkStatus);
         }
 
-        function populateSelects() {
-            const empSelect = document.getElementById('employeeSelect');
-            empSelect.innerHTML = '<option value="">Оберіть зі списку</option>';
-            employeesList.forEach(emp => {
-                const option = document.createElement('option');
-                option.value = emp;
-                option.textContent = emp;
-                empSelect.appendChild(option);
-            });
+        // --- ЛОГІКА ПОШУКУ ПО СПИСКУ ПРАЦІВНИКІВ ---
+        function initSearchableDropdown() {
+            const searchInput = document.getElementById('empSearchInput');
+            const dropdown = document.getElementById('empDropdown');
 
+            function renderList(filter = '') {
+                dropdown.innerHTML = '';
+                const filtered = employeesList.filter(emp => emp.toLowerCase().includes(filter.toLowerCase()));
+                if(filtered.length === 0) {
+                    dropdown.innerHTML = '<div class="p-3 text-gray-500">Нічого не знайдено</div>';
+                    return;
+                }
+                filtered.forEach(emp => {
+                    const item = document.createElement('div');
+                    item.className = 'p-3 hover:bg-emerald-50 cursor-pointer border-b border-gray-100 text-lg transition-colors';
+                    item.textContent = emp;
+                    item.onclick = () => {
+                        searchInput.value = emp;
+                        formState.employee = emp;
+                        dropdown.classList.add('hidden');
+                        clearError('field-employee');
+                        checkEmployeeInfo(emp);
+                    };
+                    dropdown.appendChild(item);
+                });
+            }
+
+            searchInput.addEventListener('focus', () => { dropdown.classList.remove('hidden'); renderList(searchInput.value); });
+            searchInput.addEventListener('input', (e) => { dropdown.classList.remove('hidden'); renderList(e.target.value); });
+            
+            document.addEventListener('click', (e) => {
+                if (!document.getElementById('empSearchContainer').contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        }
+        
+        function checkEmployeeInfo(emp) {
+            const infoDiv = document.getElementById('employee-info');
+            if (emp === "Попадюк Анжела Миколаївна") {
+                infoDiv.innerHTML = "📅 Ваш очікуваний графік: <b>09:45 - 18:00</b>";
+                infoDiv.classList.remove('hidden');
+            } else if (["Кішка Сергій Володимирович", "Сосновський Валерій Петрович"].includes(emp)) {
+                infoDiv.innerHTML = "🔥 Режим: <b>Дві доби підряд (48 годин)</b>";
+                infoDiv.classList.remove('hidden');
+            } else {
+                infoDiv.classList.add('hidden');
+            }
+        }
+
+        function populateSelects() {
             const hostSelect = document.getElementById('v_accompany');
             hostsList.forEach(h => hostSelect.add(new Option(h, h)));
             const signSelect = document.getElementById('v_signHost');
@@ -364,23 +416,6 @@
         function setupEventListeners() {
             document.getElementById('navEmployee').onclick = () => switchTab('employee');
             document.getElementById('navVisitor').onclick = () => switchTab('visitor');
-            
-            // Оновлено логіку зміни співробітника для відображення графіка / типу зміни
-            document.getElementById('employeeSelect').onchange = (e) => { 
-                formState.employee = e.target.value; 
-                clearError('field-employee'); 
-                
-                const infoDiv = document.getElementById('employee-info');
-                if (formState.employee === "Попадюк Анжела Миколаївна") {
-                    infoDiv.innerHTML = "📅 Ваш очікуваний графік: <b>09:45 - 18:00</b>";
-                    infoDiv.classList.remove('hidden');
-                } else if (["Кішка Сергій Володимирович", "Сосновський Валерій Петрович"].includes(formState.employee)) {
-                    infoDiv.innerHTML = "🔥 Режим: <b>Дві доби підряд (48 годин)</b>";
-                    infoDiv.classList.remove('hidden');
-                } else {
-                    infoDiv.classList.add('hidden');
-                }
-            };
 
             document.querySelectorAll('.action-btn').forEach(btn => btn.onclick = () => {
                 document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('selected'));
@@ -403,8 +438,18 @@
             document.getElementById('v_toolsCheck').onchange = (e) => document.getElementById('v_toolsInputs').classList.toggle('hidden', !e.target.checked);
             document.getElementById('submitBtn').onclick = handleMainSubmit;
             document.getElementById('submitVisitorBtn').onclick = handleVisitorSubmit;
-            document.getElementById('cancelVisitorBtn').onclick = () => { document.getElementById('visitorConfirmModal').classList.add('hidden'); };
-            document.getElementById('confirmVisitorBtn').onclick = () => { document.getElementById('visitorConfirmModal').classList.add('hidden'); if(pendingVisitorPayload) sendDataToGAS(pendingVisitorPayload, 'visitor'); };
+            
+            // Виправлено: коректне закриття модалки
+            document.getElementById('cancelVisitorBtn').onclick = () => { 
+                const m = document.getElementById('visitorConfirmModal');
+                m.classList.add('hidden'); m.classList.remove('flex');
+            };
+            document.getElementById('confirmVisitorBtn').onclick = () => { 
+                const m = document.getElementById('visitorConfirmModal');
+                m.classList.add('hidden'); m.classList.remove('flex');
+                if(pendingVisitorPayload) sendDataToGAS(pendingVisitorPayload, 'visitor'); 
+            };
+
             document.querySelectorAll('.feedback-btn').forEach(btn => btn.onclick = () => { formState.feedback = btn.dataset.val; sendDataToGAS(formState, 'employee'); });
             document.getElementById('closeModalBtn').onclick = () => { document.getElementById('statusModal').classList.add('hidden'); };
             
@@ -444,7 +489,7 @@
 
         function clearForm() {
             formState = { employee: '', action: '', feeling: null, symptoms: '', feedback: '' };
-            document.getElementById('employeeSelect').value = ''; 
+            document.getElementById('empSearchInput').value = ''; 
             document.getElementById('employee-info').classList.add('hidden');
             document.querySelectorAll('.action-btn, .rating-btn, .symptom-btn').forEach(b => b.classList.remove('selected', 'active', 'active-yes', 'active-no'));
             document.querySelectorAll('.error-ring').forEach(el => el.classList.remove('error-ring'));
@@ -461,8 +506,24 @@
             switchTab('employee');
         }
 
-        function clearError(id) { const el = document.getElementById(id); if(el) { el.classList.remove('error-ring'); el.querySelector('.error-msg').classList.add('hidden'); }}
-        function showError(id) { const el = document.getElementById(id); if(el) { el.classList.add('error-ring'); el.querySelector('.error-msg').classList.remove('hidden'); el.scrollIntoView({behavior:'smooth', block:'center'}); }}
+        // Виправлено: безпечний пошук .error-msg, щоб запобігти падінню JS
+        function clearError(id) { 
+            const el = document.getElementById(id); 
+            if(el) { 
+                el.classList.remove('error-ring'); 
+                const msg = el.querySelector('.error-msg');
+                if(msg) msg.classList.add('hidden'); 
+            }
+        }
+        function showError(id) { 
+            const el = document.getElementById(id); 
+            if(el) { 
+                el.classList.add('error-ring'); 
+                const msg = el.querySelector('.error-msg');
+                if(msg) msg.classList.remove('hidden'); 
+                el.scrollIntoView({behavior:'smooth', block:'center'}); 
+            }
+        }
 
         function handleMainSubmit() {
             if(!formState.employee) return showError('field-employee');
@@ -526,16 +587,13 @@
             const payload = { formType: type, timestamp: new Date().toISOString(), ...data };
             
             if(type === 'employee') {
-                // 1. Умови для графіка Анжели та Котельників
                 if (data.employee === "Попадюк Анжела Миколаївна") {
                     payload.expectedStart = "09:45";
                     payload.expectedEnd = "18:00";
                 } else if (["Кішка Сергій Володимирович", "Сосновський Валерій Петрович"].includes(data.employee)) {
-                    // Флаг для бекенду (GAS), щоб не закривав цю зміну автоматично
                     payload.isMultiDayShift = true; 
                 }
 
-                // 2. Умова для надсилання Email при проблемах з обладнанням
                 if (data.feedback && data.feedback.includes("проблеми з обладнанням")) {
                     payload.alertEmail = "evgeniy.galagin@gmail.com";
                 }
@@ -590,16 +648,12 @@
         }
         function updateClock() { document.getElementById('current-date').textContent = new Date().toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }); }
 
-        // Допоміжна функція для перетворення десяткових годин у формат "Години:Хвилини" (наприклад: 8.5 -> 8:30)
         function formatHoursToHHMM(hoursRaw) {
             if (hoursRaw === null || hoursRaw === undefined || hoursRaw === '') return '';
             const str = hoursRaw.toString().trim();
-            // Якщо значення вже відформатоване (наприклад, має двокрапку), залишаємо як є
             if (str.includes(':')) return str;
-            
             const hFloat = parseFloat(str.replace(',', '.'));
             if (isNaN(hFloat)) return str;
-            
             const totalMins = Math.round(hFloat * 60);
             const h = Math.floor(totalMins / 60);
             const m = Math.abs(totalMins % 60);
@@ -627,21 +681,17 @@
                 .then(res => res.json())
                 .then(data => {
                     loader.classList.add('hidden');
-                    
                     let activeCount = 0, doneCount = 0, missingCount = 0;
                     
                     if(!data || data.length === 0) {
                         tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">Немає записів за сьогодні.</td></tr>';
                     } else {
                         data.forEach(row => {
-                            // Рахуємо статистику для віджета
                             if (row.status.includes('процесі')) activeCount++;
                             else if (row.status.includes('Завершена')) doneCount++;
                             else if (row.status.includes('Прогул') || row.status.includes('Легально') || row.status.includes('з\'явився') || row.status.includes('відсутн')) missingCount++;
                             
                             let statusColor = row.status.includes('процесі') ? 'text-green-600' : (row.status.includes('з\'явився') || row.status.includes('Легально') ? 'text-red-500' : 'text-slate-600');
-                            
-                            // Використовуємо формат "Години:Хвилини"
                             let formattedHours = formatHoursToHHMM(row.hours);
 
                             let tr = `
@@ -659,7 +709,6 @@
                         });
                     }
                     
-                    // Оновлюємо цифри у віджеті
                     document.getElementById('statActive').textContent = activeCount;
                     document.getElementById('statDone').textContent = doneCount;
                     document.getElementById('statMissing').textContent = missingCount;
