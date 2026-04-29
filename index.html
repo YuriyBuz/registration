@@ -64,7 +64,7 @@
     </script>
 
     <!-- БАНЕР ВІДЛІКУ (7:59) -->
-    <div id="countdownBanner" class="hidden w-full h-[20vh] bg-red-600 z-[110] flex-col items-center justify-center text-white shadow-xl transition-all">
+    <div id="countdownBanner" class="hidden fixed top-0 left-0 w-full h-[20vh] bg-red-600 z-[110] flex-col items-center justify-center text-white shadow-xl transition-all">
         <span class="text-xl sm:text-2xl font-bold uppercase tracking-widest text-red-100 mb-2">До початку зміни:</span>
         <span id="countdownTimer" class="text-6xl sm:text-7xl font-black animate-pulse"></span>
     </div>
@@ -387,7 +387,7 @@
                 // Якщо це ймовірно початок зміни і час від 08:00 до 12:00
                 if (states[emp] !== 'Початок роботи' && h >= 8 && h < 12) {
                     const lateMins = (h - 8) * 60 + m;
-                    if (lateMins > 0) {
+                    if (lateMins >= 0) {
                         const lateH = Math.floor(lateMins / 60);
                         const lateM = lateMins % 60;
                         const timeStr = `${lateH > 0 ? lateH + ' год ' : ''}${lateM} хв`;
@@ -819,10 +819,12 @@
             if (h === 7 && m === 59) {
                 banner.classList.remove('hidden');
                 banner.classList.add('flex');
+                document.body.style.paddingTop = '20vh'; // Зсуваємо контент вниз
                 document.getElementById('countdownTimer').textContent = 60 - s;
             } else {
                 banner.classList.add('hidden');
                 banner.classList.remove('flex');
+                document.body.style.paddingTop = '0'; // Повертаємо як було
             }
         }
 
