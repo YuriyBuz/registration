@@ -63,7 +63,7 @@
         document.getElementById('manifest-link').href = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
     </script>
 
-    <!-- БАНЕР ВІДЛІКУ (7:59) -->
+    <!-- БАНЕР ВІДЛІКУ -->
     <div id="countdownBanner" class="hidden fixed top-0 left-0 w-full h-[20vh] bg-red-600 z-[110] flex-col items-center justify-center text-white shadow-xl transition-all">
         <span class="text-xl sm:text-2xl font-bold uppercase tracking-widest text-red-100 mb-2">До початку зміни:</span>
         <span id="countdownTimer" class="text-6xl sm:text-7xl font-black animate-pulse"></span>
@@ -385,38 +385,48 @@
                 const m = now.getMinutes();
                 const s = now.getSeconds();
 
-                // Якщо це ймовірно початок зміни і час від 08:00 до 12:00
-                if (states[emp] !== 'Початок роботи' && h >= 8 && h < 12) {
-                    const lateSecondsTotal = (h - 8) * 3600 + m * 60 + s;
-                    
-                    if (lateSecondsTotal >= 0) {
-                        let timeStr = '';
+                if (states[emp] !== 'Початок роботи') {
+                    // Визначаємо очікуваний час початку
+                    let expectedHour = 8;
+                    let expectedMinute = 0;
+                    if (emp === "Попадюк Анжела Миколаївна") {
+                        expectedHour = 9;
+                        expectedMinute = 45;
+                    }
+
+                    // Перевіряємо, чи працівник запізнився (від очікуваного часу до 12:00)
+                    if (h >= expectedHour && h < 12) {
+                        const lateSecondsTotal = (h - expectedHour) * 3600 + (m - expectedMinute) * 60 + s;
                         
-                        if (lateSecondsTotal < 60) {
-                            // Перша хвилина запізнення
-                            timeStr = `${lateSecondsTotal} сек`;
-                        } else if (lateSecondsTotal < 3600) {
-                            // Перша година запізнення
-                            const lateMins = Math.floor(lateSecondsTotal / 60);
-                            timeStr = `${lateMins} хв`;
-                        } else {
-                            // Більше години
-                            const lateH = Math.floor(lateSecondsTotal / 3600);
-                            const lateM = Math.floor((lateSecondsTotal % 3600) / 60);
-                            timeStr = `${lateH} год ${lateM > 0 ? lateM + ' хв' : ''}`.trim();
+                        if (lateSecondsTotal >= 0) {
+                            let timeStr = '';
+                            
+                            if (lateSecondsTotal < 60) {
+                                // Перша хвилина запізнення
+                                timeStr = `${lateSecondsTotal} сек`;
+                            } else if (lateSecondsTotal < 3600) {
+                                // Перша година запізнення
+                                const lateMins = Math.floor(lateSecondsTotal / 60);
+                                timeStr = `${lateMins} хв`;
+                            } else {
+                                // Більше години
+                                const lateH = Math.floor(lateSecondsTotal / 3600);
+                                const lateM = Math.floor((lateSecondsTotal % 3600) / 60);
+                                timeStr = `${lateH} год ${lateM > 0 ? lateM + ' хв' : ''}`.trim();
+                            }
+
+                            document.getElementById('lateModalName').textContent = emp;
+                            document.getElementById('lateModalTime').textContent = timeStr;
+
+                            const lateModal = document.getElementById('lateModal');
+                            lateModal.classList.remove('hidden');
+                            lateModal.classList.add('flex');
+
+                            setTimeout(() => {
+                                lateModal.classList.add('hidden');
+                                lateModal.classList.remove('flex');
+                            }, 5000);
                         }
-
-                        document.getElementById('lateModalName').textContent = emp;
-                        document.getElementById('lateModalTime').textContent = timeStr;
-
-                        const lateModal = document.getElementById('lateModal');
-                        lateModal.classList.remove('hidden');
-                        lateModal.classList.add('flex');
-
-                        setTimeout(() => {
-                            lateModal.classList.add('hidden');
-                            lateModal.classList.remove('flex');
-                        }, 5000);
                     }
                 }
             });
@@ -441,7 +451,7 @@
 
             setupEventListeners();
             updateClock();
-            setInterval(updateClock, 1000); // Оновлення щосекунди для таймера 7:59
+            setInterval(updateClock, 1000); // Оновлення щосекунди для таймера
             updateNetworkStatus();
             window.addEventListener('online', () => { updateNetworkStatus(); processOfflineQueue(); });
             window.addEventListener('offline', updateNetworkStatus);
@@ -824,13 +834,24 @@
             const now = new Date();
             document.getElementById('current-date').textContent = now.toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }); 
             
-            // Логіка для червоного банера о 07:59
             const h = now.getHours();
             const m = now.getMinutes();
             const s = now.getSeconds();
             const banner = document.getElementById('countdownBanner');
 
-            if (h === 7 && m === 59) {
+            // Отримуємо поточного вибраного працівника, щоб знати, коли показувати таймер
+            const empSelect = document.getElementById('employeeSelect');
+            const emp = empSelect ? empSelect.value : '';
+
+            // Визначаємо час, коли має з'явитися таймер (за хвилину до початку)
+            let timerHour = 7;
+            let timerMinute = 59;
+            if (emp === "Попадюк Анжела Миколаївна") {
+                timerHour = 9;
+                timerMinute = 44;
+            }
+
+            if (h === timerHour && m === timerMinute) {
                 banner.classList.remove('hidden');
                 banner.classList.add('flex');
                 document.body.style.paddingTop = '20vh'; // Зсуваємо контент вниз
