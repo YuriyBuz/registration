@@ -64,7 +64,7 @@
     </script>
 
     <!-- БАНЕР ВІДЛІКУ (7:59) -->
-    <div id="countdownBanner" class="hidden fixed top-0 left-0 w-full h-[20vh] bg-red-600 z-[110] flex-col items-center justify-center text-white shadow-xl transition-all">
+    <div id="countdownBanner" class="hidden w-full h-[20vh] bg-red-600 z-[110] flex-col items-center justify-center text-white shadow-xl transition-all">
         <span class="text-xl sm:text-2xl font-bold uppercase tracking-widest text-red-100 mb-2">До початку зміни:</span>
         <span id="countdownTimer" class="text-6xl sm:text-7xl font-black animate-pulse"></span>
     </div>
@@ -402,7 +402,7 @@
                         setTimeout(() => {
                             lateModal.classList.add('hidden');
                             lateModal.classList.remove('flex');
-                        }, 3000);
+                        }, 5000);
                     }
                 }
             });
@@ -786,8 +786,9 @@
         function showToast(m, i, d) {
             document.getElementById('toastMessage').innerHTML = m; document.getElementById('toastIcon').textContent = i;
             const t = document.getElementById('customToast'), c = document.getElementById('customToastContent');
-            t.classList.remove('hidden'); requestAnimationFrame(() => { t.classList.remove('opacity-0'); c.classList.remove('scale-90', 'opacity-0'); c.classList.add('scale-100', 'opacity-100'); });
-            setTimeout(() => { t.classList.add('opacity-0'); c.classList.remove('scale-100', 'opacity-100'); c.classList.add('scale-90', 'opacity-0'); setTimeout(() => { t.classList.add('hidden'); clearForm(); }, 300); }, d);
+            t.classList.remove('hidden'); t.classList.add('flex');
+            requestAnimationFrame(() => { t.classList.remove('opacity-0'); c.classList.remove('scale-90', 'opacity-0'); c.classList.add('scale-100', 'opacity-100'); });
+            setTimeout(() => { t.classList.add('opacity-0'); c.classList.remove('scale-100', 'opacity-100'); c.classList.add('scale-90', 'opacity-0'); setTimeout(() => { t.classList.add('hidden'); t.classList.remove('flex'); clearForm(); }, 300); }, d);
         }
 
         function showSystemModal(t, m) { document.getElementById('modalTitle').textContent = t; document.getElementById('modalMessage').textContent = m; document.getElementById('statusModal').classList.remove('hidden'); document.getElementById('statusModal').classList.add('flex'); }
