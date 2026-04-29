@@ -63,6 +63,19 @@
         document.getElementById('manifest-link').href = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
     </script>
 
+    <!-- БАНЕР ВІДЛІКУ (7:59) -->
+    <div id="countdownBanner" class="hidden fixed top-0 left-0 w-full h-[20vh] bg-red-600 z-[110] flex-col items-center justify-center text-white shadow-xl transition-all">
+        <span class="text-xl sm:text-2xl font-bold uppercase tracking-widest text-red-100 mb-2">До початку зміни:</span>
+        <span id="countdownTimer" class="text-6xl sm:text-7xl font-black animate-pulse"></span>
+    </div>
+
+    <!-- МОДАЛЬНЕ ВІКНО "ВИ ЗАПІЗНИЛИСЬ" -->
+    <div id="lateModal" class="fixed inset-0 hidden items-center justify-center bg-red-600/95 backdrop-blur-md z-[120] text-white flex-col p-6 text-center">
+        <h2 class="text-3xl sm:text-5xl font-black mb-6" id="lateModalName"></h2>
+        <p class="text-2xl sm:text-3xl font-bold opacity-90">Ви запізнились на:</p>
+        <p class="text-5xl sm:text-7xl font-black mt-6 drop-shadow-xl" id="lateModalTime"></p>
+    </div>
+
     <div class="container mx-auto max-w-2xl p-4 sm:p-6 relative">
         <header class="flex justify-between items-center mb-6 pb-2 border-b border-gray-200">
             <div class="w-1/3 flex items-center gap-2">
@@ -93,9 +106,13 @@
             
             <div class="card p-5 rounded-2xl shadow-sm transition-all" id="field-employee">
                 <label for="employeeSelect" class="block text-lg font-bold mb-3">Ваше прізвище та ім'я</label>
-                <div class="relative" id="empSearchContainer">
-                    <input type="text" id="empSearchInput" placeholder="Почніть вводити прізвище..." class="w-full p-3 border border-gray-300 rounded-xl bg-transparent text-lg focus:ring-2 focus:ring-emerald-500 outline-none" autocomplete="off">
-                    <div id="empDropdown" class="hidden absolute z-10 w-full bg-white border border-gray-200 rounded-xl mt-1 shadow-xl max-h-60 overflow-y-auto"></div>
+                <div class="relative">
+                    <select id="employeeSelect" class="w-full p-4 border border-gray-300 rounded-xl bg-white text-lg font-medium focus:ring-2 focus:ring-emerald-500 outline-none appearance-none cursor-pointer">
+                        <option value="" disabled selected>Оберіть своє прізвище...</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                        <svg class="fill-current h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                    </div>
                 </div>
                 <p id="employee-info" class="hidden text-sm text-emerald-700 mt-3 font-semibold bg-emerald-50 border border-emerald-100 p-3 rounded-xl"></p>
                 <p class="error-msg hidden text-red-500 text-sm mt-2 font-semibold">Будь ласка, оберіть своє прізвище зі списку</p>
@@ -134,7 +151,7 @@
                 </div>
                 <p class="error-msg hidden text-red-500 text-sm mt-3 font-semibold">Будь ласка, оберіть дію (Початок чи Кінець)</p>
             </div>
-            <button id="submitBtn" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xl font-bold rounded-2xl shadow-lg active:scale-95 transition-transform">Відправити</button>
+            <button id="submitBtn" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xl font-bold rounded-2xl shadow-lg active:scale-95 transition-transform">Зареєструвати</button>
         </div>
 
         <!-- ================= ФОРМА ВІЗИТЕРА ================= -->
@@ -216,7 +233,7 @@
 
         <div id="feedback-view" class="hidden space-y-5">
             <div class="card p-6 sm:p-8 rounded-3xl shadow-lg text-center bg-white border-emerald-500 border-t-4">
-                <h2 class="text-2xl sm:text-3xl font-bold mb-8 text-slate-800">Дякуємо за роботу! <br><span class="text-lg sm:text-xl text-slate-500 font-medium">Оцініть, як пройшла зміна:</span></h2>
+                <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-slate-800">Майже готово! ⏳<br><span class="text-lg sm:text-xl text-red-600 font-bold block mt-3">Обов'язково натисніть на одну з кнопок нижче, щоб зміна завершилась:</span></h2>
                 <div class="flex flex-col gap-4">
                     <button class="feedback-btn bg-emerald-50 border border-emerald-200 text-emerald-800 p-5 rounded-2xl font-bold text-lg sm:text-xl transform active:scale-95" data-val="Все чудово ✅">Все чудово ✅</button>
                     <button class="feedback-btn bg-amber-50 border border-amber-200 text-amber-800 p-5 rounded-2xl font-bold text-lg sm:text-xl transform active:scale-95" data-val="Були проблеми з обладнанням ⚠️">Були проблеми з обладнанням ⚠️</button>
@@ -349,7 +366,47 @@
 
         function initApp() {
             populateSelects();
-            initSearchableDropdown();
+            
+            // Налаштування випадаючого списку працівників
+            const empSelect = document.getElementById('employeeSelect');
+            employeesList.forEach(emp => {
+                empSelect.add(new Option(emp, emp));
+            });
+            empSelect.addEventListener('change', (e) => {
+                const emp = e.target.value;
+                formState.employee = emp;
+                clearError('field-employee');
+                checkEmployeeInfo(emp);
+
+                // Логіка перевірки на запізнення
+                const states = JSON.parse(localStorage.getItem(SHIFT_STATES_KEY) || '{}');
+                const now = new Date();
+                const h = now.getHours();
+                const m = now.getMinutes();
+
+                // Якщо це ймовірно початок зміни і час від 08:00 до 12:00
+                if (states[emp] !== 'Початок роботи' && h >= 8 && h < 12) {
+                    const lateMins = (h - 8) * 60 + m;
+                    if (lateMins > 0) {
+                        const lateH = Math.floor(lateMins / 60);
+                        const lateM = lateMins % 60;
+                        const timeStr = `${lateH > 0 ? lateH + ' год ' : ''}${lateM} хв`;
+
+                        document.getElementById('lateModalName').textContent = emp;
+                        document.getElementById('lateModalTime').textContent = timeStr;
+
+                        const lateModal = document.getElementById('lateModal');
+                        lateModal.classList.remove('hidden');
+                        lateModal.classList.add('flex');
+
+                        setTimeout(() => {
+                            lateModal.classList.add('hidden');
+                            lateModal.classList.remove('flex');
+                        }, 3000);
+                    }
+                }
+            });
+
             generateRatingButtons();
             generateMedQuestions();
             
@@ -370,7 +427,7 @@
 
             setupEventListeners();
             updateClock();
-            setInterval(updateClock, 60000);
+            setInterval(updateClock, 1000); // Оновлення щосекунди для таймера 7:59
             updateNetworkStatus();
             window.addEventListener('online', () => { updateNetworkStatus(); processOfflineQueue(); });
             window.addEventListener('offline', updateNetworkStatus);
@@ -394,42 +451,6 @@
         function vDraw(e) { if (!vIsDrawing) return; const pos = getVPos(e); vCtx.lineTo(pos.x, pos.y); vCtx.stroke(); vHasSignature = true; e.preventDefault(); }
         function stopVDraw() { vIsDrawing = false; }
         function clearVisitorSignature() { if(vCtx) { vCtx.clearRect(0, 0, vCanvas.width, vCanvas.height); vHasSignature = false; } }
-
-        function initSearchableDropdown() {
-            const searchInput = document.getElementById('empSearchInput');
-            const dropdown = document.getElementById('empDropdown');
-
-            function renderList(filter = '') {
-                dropdown.innerHTML = '';
-                const filtered = employeesList.filter(emp => emp.toLowerCase().includes(filter.toLowerCase()));
-                if(filtered.length === 0) {
-                    dropdown.innerHTML = '<div class="p-3 text-gray-500">Нічого не знайдено</div>';
-                    return;
-                }
-                filtered.forEach(emp => {
-                    const item = document.createElement('div');
-                    item.className = 'p-3 hover:bg-emerald-50 cursor-pointer border-b border-gray-100 text-lg transition-colors';
-                    item.textContent = emp;
-                    item.onclick = () => {
-                        searchInput.value = emp;
-                        formState.employee = emp;
-                        dropdown.classList.add('hidden');
-                        clearError('field-employee');
-                        checkEmployeeInfo(emp);
-                    };
-                    dropdown.appendChild(item);
-                });
-            }
-
-            searchInput.addEventListener('focus', () => { dropdown.classList.remove('hidden'); renderList(searchInput.value); });
-            searchInput.addEventListener('input', (e) => { dropdown.classList.remove('hidden'); renderList(e.target.value); });
-            
-            document.addEventListener('click', (e) => {
-                if (!document.getElementById('empSearchContainer').contains(e.target)) {
-                    dropdown.classList.add('hidden');
-                }
-            });
-        }
         
         function checkEmployeeInfo(emp) {
             const infoDiv = document.getElementById('employee-info');
@@ -499,6 +520,12 @@
                 document.getElementById('v_tab_in').classList.remove('bg-white', 'shadow-sm');
                 document.getElementById('v_form_out_container').classList.remove('hidden');
                 document.getElementById('v_form_in_container').classList.add('hidden');
+                
+                // Автозаповнення візитера, якщо вносив інструменти
+                const vt = JSON.parse(localStorage.getItem('foodline_visitor_tools') || 'null');
+                if (vt && vt.date === new Date().toDateString()) {
+                    document.getElementById('v_out_fullName').value = vt.name;
+                }
             };
 
             document.querySelectorAll('.action-btn').forEach(btn => btn.onclick = () => {
@@ -582,7 +609,7 @@
 
         function clearForm() {
             formState = { employee: '', action: '', feeling: null, symptoms: '', feedback: '' };
-            document.getElementById('empSearchInput').value = ''; 
+            document.getElementById('employeeSelect').value = ''; 
             document.getElementById('employee-info').classList.add('hidden');
             document.querySelectorAll('.action-btn, .rating-btn, .symptom-btn').forEach(b => b.classList.remove('selected', 'active', 'active-yes', 'active-no'));
             document.querySelectorAll('.error-ring').forEach(el => el.classList.remove('error-ring'));
@@ -726,6 +753,13 @@
                 states[data.employee] = data.action; localStorage.setItem(SHIFT_STATES_KEY, JSON.stringify(states));
             }
             
+            if (type === 'visitor' && data.v_action === 'in' && parseInt(data.v_toolsIn) > 0) {
+                localStorage.setItem('foodline_visitor_tools', JSON.stringify({
+                    name: data.v_fullName,
+                    date: new Date().toDateString()
+                }));
+            }
+            
             if(!navigator.onLine) { 
                 saveToOfflineQueue(payload); 
                 triggerSuccessToast(type, isEmployeeStart, name, true); 
@@ -740,17 +774,17 @@
             const offlineText = isOffline ? " (Збережено офлайн)" : "";
             if (type === 'employee') {
                 if (isEmployeeStart) {
-                    showToast(`Доброго ранку!\n${name},\nбажаємо вам хорошого робочого дня!${offlineText}`, "☀️", 3000);
+                    showToast(`Доброго ранку!<br>${name},<br>бажаємо вам<br>хорошого робочого дня!${offlineText}`, "☀️", 3000);
                 } else {
-                    showToast(`${name},\nДякуємо за вашу роботу сьогодні.\nГарного відпочинку та до зустрічі!${offlineText}`, "🌙", 3500);
+                    showToast(`${name},<br>Дякуємо за вашу роботу сьогодні.<br>Гарного відпочинку<br>та до зустрічі!${offlineText}`, "🌙", 3500);
                 }
             } else {
-                showToast(`Візитера успішно зареєстровано!${offlineText}`, "✅", 2500);
+                showToast(`Візитера успішно<br>зареєстровано!${offlineText}`, "✅", 2500);
             }
         }
 
         function showToast(m, i, d) {
-            document.getElementById('toastMessage').innerText = m; document.getElementById('toastIcon').textContent = i;
+            document.getElementById('toastMessage').innerHTML = m; document.getElementById('toastIcon').textContent = i;
             const t = document.getElementById('customToast'), c = document.getElementById('customToastContent');
             t.classList.remove('hidden'); requestAnimationFrame(() => { t.classList.remove('opacity-0'); c.classList.remove('scale-90', 'opacity-0'); c.classList.add('scale-100', 'opacity-100'); });
             setTimeout(() => { t.classList.add('opacity-0'); c.classList.remove('scale-100', 'opacity-100'); c.classList.add('scale-90', 'opacity-0'); setTimeout(() => { t.classList.add('hidden'); clearForm(); }, 300); }, d);
@@ -770,7 +804,26 @@
             document.getElementById('statusDot').className = `w-2 h-2 rounded-full ${online ? (q.length>0 ? 'bg-yellow-500 animate-pulse' : 'bg-green-500') : 'bg-red-500'}`;
             document.getElementById('statusText').textContent = online ? (q.length>0 ? `Черга: ${q.length}` : 'Онлайн') : 'Офлайн';
         }
-        function updateClock() { document.getElementById('current-date').textContent = new Date().toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }); }
+
+        function updateClock() { 
+            const now = new Date();
+            document.getElementById('current-date').textContent = now.toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }); 
+            
+            // Логіка для червоного банера о 07:59
+            const h = now.getHours();
+            const m = now.getMinutes();
+            const s = now.getSeconds();
+            const banner = document.getElementById('countdownBanner');
+
+            if (h === 7 && m === 59) {
+                banner.classList.remove('hidden');
+                banner.classList.add('flex');
+                document.getElementById('countdownTimer').textContent = 60 - s;
+            } else {
+                banner.classList.add('hidden');
+                banner.classList.remove('flex');
+            }
+        }
 
         function formatHoursToHHMM(hoursRaw) {
             if (hoursRaw === null || hoursRaw === undefined || hoursRaw === '') return '';
