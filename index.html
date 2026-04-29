@@ -383,14 +383,28 @@
                 const now = new Date();
                 const h = now.getHours();
                 const m = now.getMinutes();
+                const s = now.getSeconds();
 
                 // Якщо це ймовірно початок зміни і час від 08:00 до 12:00
                 if (states[emp] !== 'Початок роботи' && h >= 8 && h < 12) {
-                    const lateMins = (h - 8) * 60 + m;
-                    if (lateMins >= 0) {
-                        const lateH = Math.floor(lateMins / 60);
-                        const lateM = lateMins % 60;
-                        const timeStr = `${lateH > 0 ? lateH + ' год ' : ''}${lateM} хв`;
+                    const lateSecondsTotal = (h - 8) * 3600 + m * 60 + s;
+                    
+                    if (lateSecondsTotal >= 0) {
+                        let timeStr = '';
+                        
+                        if (lateSecondsTotal < 60) {
+                            // Перша хвилина запізнення
+                            timeStr = `${lateSecondsTotal} сек`;
+                        } else if (lateSecondsTotal < 3600) {
+                            // Перша година запізнення
+                            const lateMins = Math.floor(lateSecondsTotal / 60);
+                            timeStr = `${lateMins} хв`;
+                        } else {
+                            // Більше години
+                            const lateH = Math.floor(lateSecondsTotal / 3600);
+                            const lateM = Math.floor((lateSecondsTotal % 3600) / 60);
+                            timeStr = `${lateH} год ${lateM > 0 ? lateM + ' хв' : ''}`.trim();
+                        }
 
                         document.getElementById('lateModalName').textContent = emp;
                         document.getElementById('lateModalTime').textContent = timeStr;
