@@ -114,6 +114,7 @@
                         <svg class="fill-current h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
                     </div>
                 </div>
+                <p id="employee-load-msg" class="hidden text-sm text-amber-800 mt-3 font-semibold bg-amber-50 border border-amber-200 p-3 rounded-xl"></p>
                 <p id="employee-info" class="hidden text-sm text-emerald-700 mt-3 font-semibold bg-emerald-50 border border-emerald-100 p-3 rounded-xl"></p>
                 <p class="error-msg hidden text-red-500 text-sm mt-2 font-semibold">Будь ласка, оберіть своє прізвище зі списку</p>
             </div>
@@ -322,26 +323,14 @@
     </div>
 
     <script>
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzZSh_4skLG2E49Nyp_1y72H3jBqe5xgMC1PENDhV0EqtmaGJHSe92RXM1PxRh_6dlbQA/exec'; 
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwPWvbKF7SQiMYC44fsZofC_bNJRO69OCvtaO82LMUFcMlO-zlxwU2g5j6eQ_O5X1ojwQ/exec'; 
         const OFFLINE_QUEUE_KEY = 'foodline_offline_queue';
         const SHIFT_STATES_KEY = 'foodline_shift_states'; 
 
-        const employeesList = [
-            "Буквай Ірина Вікторівна", "Бондаренко Валерій Валентинович", "Варгач Анастасія Андріївна", "Вискірко Руслана Михайлівна",
-            "Воробей Людмила Леонідівна", "Ворожко Дарья Вячеславівна",
-            "Галагін Євгеній Ярославович", "Гончарук Ольга Михайлівна", "Гора Андрій Олександрович", 
-            "Долинюк Олександр Миколайович", "Єрко Віктор Андрійович", "Загура Іван Борисович", "Загоруйко Наталія Володимирівна", 
-            "Іванчук Олександр Анатолійович", "Корнієнко Жанна Василівна",
-            "Козурак Іван Миколайович", "Козило Василь Вячеславович", "Кораблін Дмитро", 
-            "Король Юрій Валерійович", "Кучера Галина Іванівна", "Лавриненко Максим Миколайович",
-            "Максімюк Анатолій Анатолійович", "Максімюк Анатолій Вікторович", "Марків Олександр Йосипович",
-            "Миняйло Анастасія Вадимівна", "Миняйло Оксана Вадимівна", "Непорадна Олена Михайлівна", 
-            "Огаркова Марія Володимирівна", "Попадюк Анжела Миколаївна", "Рашидов Талех Ядулла огли", "Садиріна Ольга Анатоліївна", "Снітко Ярослав Іванович", "Соботович Лілія Михайлівна", 
-            "Соботович Тетяна Михайлівна", "Солдатова Ірина Володимирівна", "Сосновський Валерій Петрович", "Татарченко Оксана Михайлівна",
-            "Фалько Анатолій Олександрович", "Фисина Наталія Григорівна",
-            "Хлупянець Віталій Анатолійович", "Черніцький Назарій Вячеславович", "Шанчук Павло Сергійович",
-            "Шута Олександра Сергіівна"
-        ];
+        const EMPLOYEES_CACHE_KEY = 'foodline_employees_last';
+
+        // Прізвища беруться ТІЛЬКИ з Google-таблиці (колонка A поточного місяця).
+        let employeesList = [];
 
         const hostsList = ["Галагін Євгеній Ярославович", "Шута Олександра Сергіївна", "Соботович Лілія Михайлівна", "Огаркова Марія Володимирівна", "Гончарук Ольга Михайлівна", "Бузницький Юрій", "Диндар Анастасія"];
         const signersList = ["Галагін Євгеній Ярославович", "Бузницький Юрій", "Диндар Анастасія"];
@@ -366,11 +355,9 @@
         function initApp() {
             populateSelects();
             
-            // Налаштування випадаючого списку працівників
+            // Налаштування випадаючого списку працівників (дані з Google-таблиці)
             const empSelect = document.getElementById('employeeSelect');
-            employeesList.forEach(emp => {
-                empSelect.add(new Option(emp, emp));
-            });
+            initEmployees();
             empSelect.addEventListener('change', (e) => {
                 const emp = e.target.value;
                 formState.employee = emp;
@@ -486,6 +473,58 @@
             } else {
                 infoDiv.classList.add('hidden');
             }
+        }
+
+        // --- СПИСОК ПРАЦІВНИКІВ З GOOGLE-ТАБЛИЦІ (колонка A поточного місяця) ---
+        function initEmployees() {
+            const sel = document.getElementById('employeeSelect');
+            sel.innerHTML = '<option value="" disabled selected>Завантаження списку\u2026</option>';
+            loadEmployees();
+        }
+
+        function loadEmployees() {
+            const sel = document.getElementById('employeeSelect');
+
+            fetch(GOOGLE_SCRIPT_URL + '?action=get_employees')
+                .then(res => res.json())
+                .then(list => {
+                    if (!Array.isArray(list) || list.length === 0) throw new Error('empty');
+                    localStorage.setItem(EMPLOYEES_CACHE_KEY, JSON.stringify(list));
+                    fillEmployeeSelect(list);
+                    setEmployeeMsg('');
+                })
+                .catch(() => {
+                    let saved = null;
+                    try { saved = JSON.parse(localStorage.getItem(EMPLOYEES_CACHE_KEY) || 'null'); } catch (e) {}
+
+                    if (Array.isArray(saved) && saved.length) {
+                        fillEmployeeSelect(saved);
+                        setEmployeeMsg("\u26A0\uFE0F Немає зв'язку з таблицею. Показано список із останнього завантаження.");
+                    } else {
+                        sel.innerHTML = '<option value="" disabled selected>Список недоступний</option>';
+                        setEmployeeMsg("\u26A0\uFE0F Не вдалося завантажити список працівників. Перевірте інтернет і оновіть сторінку.");
+                    }
+                });
+        }
+
+        function fillEmployeeSelect(list) {
+            const sel = document.getElementById('employeeSelect');
+            if (!sel) return;
+            const prev = sel.value;
+
+            employeesList = list.map(i => (typeof i === 'string' ? i : i.name)).filter(Boolean);
+
+            sel.innerHTML = '<option value="" disabled selected>Оберіть своє прізвище...</option>';
+            employeesList.forEach(name => sel.add(new Option(name, name)));
+
+            if (prev && employeesList.indexOf(prev) !== -1) sel.value = prev;
+        }
+
+        function setEmployeeMsg(html) {
+            const el = document.getElementById('employee-load-msg');
+            if (!el) return;
+            if (html) { el.innerHTML = html; el.classList.remove('hidden'); }
+            else { el.classList.add('hidden'); }
         }
 
         function populateSelects() {
