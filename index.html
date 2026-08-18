@@ -414,6 +414,7 @@ function initApp() {
   generateMedQuestions();
   setupSignatureCanvas();
   setupEventListeners();
+  buildFeedbackCard();
 
   loadEmployees();
 
@@ -758,9 +759,14 @@ function showLateModalIfNeeded(emp) {
   if (nowSec < startSec || now.getHours() >= 12) return;
 
   const late = nowSec - startSec;
+
+  // ВИПРАВЛЕНО: на сервері пільга 15 хв, а тут її не було —
+  // людина о 08:03 отримувала червоний екран «Ви запізнились на 3 хв»,
+  // хоча в табелі запізнення не фіксувалось.
+  if (late < 15 * 60) return;
+
   let timeStr;
-  if (late < 60) timeStr = late + ' сек';
-  else if (late < 3600) timeStr = Math.floor(late / 60) + ' хв';
+  if (late < 3600) timeStr = Math.floor(late / 60) + ' хв';
   else {
     const h = Math.floor(late / 3600), m = Math.floor((late % 3600) / 60);
     timeStr = (h + ' год ' + (m > 0 ? m + ' хв' : '')).trim();
@@ -821,6 +827,49 @@ function showError(id) {
   el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
+/**
+ * НОВЕ: оцінка зміни тепер частина головної форми, а не окремий екран ПІСЛЯ.
+ * Раніше «Кінець роботи» не йшов на сервер, доки людина не натисне оцінку —
+ * якщо вона відходила від планшета, зміна зникала безслідно
+ * (шість незакритих змін Рашидова в серпні).
+ */
+function buildFeedbackCard() {
+  const submit = document.getElementById('submitBtn');
+  const card = document.createElement('div');
+  card.id = 'field-feedback';
+  card.className = 'card p-5 rounded-2xl shadow-sm hidden';
+  card.innerHTML =
+    '<label class="block text-lg font-bold mb-4">Як пройшла зміна?</label>' +
+    '<div class="flex flex-col gap-3">' +
+      '<button type="button" class="fb-btn bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-2xl font-bold text-base sm:text-lg" data-val="Все чудово ✅">Все чудово ✅</button>' +
+      '<button type="button" class="fb-btn bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-2xl font-bold text-base sm:text-lg" data-val="Були проблеми з обладнанням ⚠️">Були проблеми з обладнанням ⚠️</button>' +
+      '<button type="button" class="fb-btn bg-red-50 border border-red-200 text-red-800 p-4 rounded-2xl font-bold text-base sm:text-lg" data-val="Потрібна увага керівника 🆘">Потрібна увага керівника 🆘</button>' +
+    '</div>' +
+    '<p class="error-msg hidden text-red-500 text-sm mt-3 font-semibold">Оцініть, як пройшла зміна</p>';
+
+  submit.parentNode.insertBefore(card, submit);
+
+  card.addEventListener('click', function (e) {
+    const b = e.target.closest ? e.target.closest('.fb-btn') : null;
+    if (!b) return;
+    card.querySelectorAll('.fb-btn').forEach(function (x) { x.classList.remove('ring-4', 'ring-offset-2', 'ring-slate-400'); });
+    b.classList.add('ring-4', 'ring-offset-2', 'ring-slate-400');
+    formState.feedback = b.dataset.val;
+    clearError('field-feedback');
+  });
+
+  // Блок оцінки потрібен тільки для «Кінець роботи»
+  document.getElementById('field-action').addEventListener('click', function () {
+    const isEnd = (formState.action === 'Кінець роботи');
+    card.classList.toggle('hidden', !isEnd);
+    if (!isEnd) {
+      formState.feedback = '';
+      card.querySelectorAll('.fb-btn').forEach(function (x) { x.classList.remove('ring-4', 'ring-offset-2', 'ring-slate-400'); });
+      clearError('field-feedback');
+    }
+  });
+}
+
 function handleMainSubmit() {
   if (isSending) return;
   if (!formState.employee) return showError('field-employee');
@@ -828,20 +877,18 @@ function handleMainSubmit() {
   if (!formState.symptoms) return showError('field-symptoms');
   if (!formState.action)   return showError('field-action');
 
+  if (formState.action === 'Кінець роботи' && !formState.feedback) return showError('field-feedback');
+
   const s = readStates();
   const rec = s.states[formState.employee];
   if (rec && rec.action === formState.action) {
     showSystemModal('Відмітку вже зроблено',
-      `Ви вже зареєстрували «${formState.action}». Спочатку зробіть протилежну відмітку.`);
+      'Ви вже зареєстрували «' + formState.action + '». Спочатку зробіть протилежну відмітку.');
     return;
   }
 
-  if (formState.action === 'Кінець роботи') {
-    document.getElementById('main-form').classList.add('hidden');
-    document.getElementById('feedback-view').classList.remove('hidden');
-  } else {
-    sendDataToGAS(formState, 'employee');
-  }
+  // Відправляємо ОДРАЗУ, разом з оцінкою. Окремого екрана більше немає.
+  sendDataToGAS(formState, 'employee');
 }
 
 function handleVisitorInSubmit() {
@@ -928,10 +975,20 @@ function makeRecordId() {
  * ВИПРАВЛЕНО: раніше запит ішов у режимі no-cors, відповідь не читалась,
  * і форма показувала «успішно» навіть коли сервер нічого не записав.
  */
+function rollbackState(backup) {
+  if (!backup) return;
+  const s = readStates();
+  if (backup.prev) s.states[backup.emp] = backup.prev;
+  else delete s.states[backup.emp];
+  saveStates(s);
+}
+
 async function sendDataToGAS(data, type) {
   if (isSending) return;
   isSending = true;
   showSaving(true);
+
+  let stateBackup = null;   // для відкату, якщо сервер відмовить
 
   try {
     const isEmployeeStart = (type === 'employee' && data.action === 'Початок роботи');
@@ -951,6 +1008,7 @@ async function sendDataToGAS(data, type) {
       if (data.feedback && data.feedback.indexOf('проблеми з обладнанням') !== -1) payload.alertEmail = true;
 
       const s = readStates();
+      stateBackup = { emp: data.employee, prev: s.states[data.employee] || null };
       s.states[data.employee] = { action: data.action, ts: Date.now() };
       saveStates(s);
     }
@@ -975,7 +1033,10 @@ async function sendDataToGAS(data, type) {
     }
 
     if (res.status === 'rejected') {
-      // Сервер відповів і відмовив (напр. візитера не знайдено) — повторювати марно
+      // Сервер відповів і відмовив (напр. візитера не знайдено) — повторювати марно.
+      // ВИПРАВЛЕНО: відкочуємо локальний стан, інакше планшет вважає, що відмітка є,
+      // і людина отримує «Ви вже зареєстрували» без можливості повторити.
+      rollbackState(stateBackup);
       showSystemModal('Не вдалося зареєструвати', res.message || 'Сервер відхилив запис. Зверніться до керівника.');
       return;
     }
@@ -988,6 +1049,7 @@ async function sendDataToGAS(data, type) {
 
   } catch (err) {
     showSaving(false);
+    rollbackState(stateBackup);
     showSystemModal('Помилка', 'Щось пішло не так. Спробуйте ще раз або покличте керівника.');
   } finally {
     isSending = false;
@@ -1084,6 +1146,12 @@ function clearForm() {
   document.querySelectorAll('.error-ring').forEach(function (el) { el.classList.remove('error-ring'); });
   document.querySelectorAll('.error-msg').forEach(function (el) { el.classList.add('hidden'); });
 
+  const fbCard = document.getElementById('field-feedback');
+  if (fbCard) {
+    fbCard.classList.add('hidden');
+    fbCard.querySelectorAll('.fb-btn').forEach(function (x) { x.classList.remove('ring-4', 'ring-offset-2', 'ring-slate-400'); });
+  }
+
   visitorState = {}; pendingVisitorPayload = null;
   medQuestions.forEach(function (q) { visitorState[q.id] = null; });
 
@@ -1126,7 +1194,14 @@ async function processOfflineQueue() {
     for (const p of q) {
       if (!p.queued) p.queued = true;          // сервер не буде правити старий timestamp
       const r = await postPayload(p);
+
       if (r.status === 'ok') continue;         // записано
+
+      // ВИПРАВЛЕНО: раніше відхилений назавжди запис лишався в черзі і повторювався
+      // кожні 2 хвилини вічно. «forbidden» лишаємо — це помилка конфігурації,
+      // її можна виправити деплоєм, і тоді запис усе-таки пройде.
+      if (r.status === 'rejected' && r.code !== 'forbidden') continue;
+
       remain.push(p);                          // усе інше лишаємо на наступну спробу
     }
     writeQueue(remain);
